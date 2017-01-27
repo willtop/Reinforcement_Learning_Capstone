@@ -1,19 +1,14 @@
-#!/usr/bin/env python
-
 import tensorflow as tf
 import cv2
-import sys
 
-sys.path.append("Wrapped Game Code/")
-import pong_fun  # whichever is imported "as game" will be used
-import dummy_game
-import tetris_fun as game
+import input_processor as game
 import random
 import numpy as np
 from collections import deque
 
-GAME = 'tetris'  # the name of the game being played for log files
-ACTIONS = 6  # number of valid actions
+GAME = 'stack'  # the name of the game being played for log files
+ACTIONS = 2  # number of valid actions
+INPUT_DIMS = (60, 100)
 GAMMA = 0.99  # decay rate of past observations
 OBSERVE = 500.  # timesteps to observe before training
 EXPLORE = 500.  # frames over which to anneal epsilon
@@ -21,6 +16,7 @@ FINAL_EPSILON = 0.05  # final value of epsilon
 INITIAL_EPSILON = 1.0  # starting value of epsilon
 REPLAY_MEMORY = 590000  # number of previous transitions to remember
 BATCH = 32  # size of minibatch
+LEARNING_RATE = 1e-6
 K = 1  # only select an action every Kth frame, repeat prev for others
 
 
@@ -42,7 +38,7 @@ def max_pool_2x2(x):
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME")
 
 
-def createNetwork():
+def create_network():
     # network weights
     W_conv1 = weight_variable([8, 8, 4, 32])
     b_conv1 = bias_variable([32])
@@ -60,7 +56,7 @@ def createNetwork():
     b_fc2 = bias_variable([ACTIONS])
 
     # input layer
-    s = tf.placeholder("float", [None, 80, 80, 4])
+    s = tf.placeholder("float", [None, INPUT_DIMS[0], INPUT_DIMS[1], 4])
 
     # hidden layers
     h_conv1 = tf.nn.relu(conv2d(s, W_conv1, 4) + b_conv1)
@@ -83,13 +79,13 @@ def createNetwork():
     return s, readout, h_fc1
 
 
-def trainNetwork(s, readout, h_fc1, sess):
+def train_network(s, readout, h_fc1, sess):
     # define the cost function
     a = tf.placeholder("float", [None, ACTIONS])
     y = tf.placeholder("float", [None])
     readout_action = tf.reduce_sum(tf.mul(readout, a), reduction_indices=1)
     cost = tf.reduce_mean(tf.square(y - readout_action))
-    train_step = tf.train.AdamOptimizer(1e-6).minimize(cost)
+    train_step = tf.train.AdamOptimizer(LEARNING_RATE).minimize(cost)
 
     # open up a game state to communicate with emulator
     game_state = game.GameState()
@@ -101,11 +97,11 @@ def trainNetwork(s, readout, h_fc1, sess):
     a_file = open("logs_" + GAME + "/readout.txt", 'w')
     h_file = open("logs_" + GAME + "/hidden.txt", 'w')
 
-    # get the first state by doing nothing and preprocess the image to 80x80x4
+    # get the first state by doing nothing and preprocess the image to INPUT_DIMSx4
     do_nothing = np.zeros(ACTIONS)
     do_nothing[0] = 1
     x_t, r_0, terminal = game_state.frame_step(do_nothing)
-    x_t = cv2.cvtColor(cv2.resize(x_t, (80, 80)), cv2.COLOR_BGR2GRAY)
+    x_t = cv2.cvtColor(cv2.resize(x_t, INPUT_DIMS), cv2.COLOR_RGB2GRAY)
     ret, x_t = cv2.threshold(x_t, 1, 255, cv2.THRESH_BINARY)
     s_t = np.stack((x_t, x_t, x_t, x_t), axis=2)
 
@@ -115,11 +111,9 @@ def trainNetwork(s, readout, h_fc1, sess):
     checkpoint = tf.train.get_checkpoint_state("saved_networks")
     if checkpoint and checkpoint.model_checkpoint_path:
         saver.restore(sess, checkpoint.model_checkpoint_path)
-        print
-        "Successfully loaded:", checkpoint.model_checkpoint_path
+        print("Successfully loaded:", checkpoint.model_checkpoint_path)
     else:
-        print
-        "Could not find old network weights"
+        print("Could not find old network weights")
 
     epsilon = INITIAL_EPSILON
     t = 0
@@ -142,9 +136,9 @@ def trainNetwork(s, readout, h_fc1, sess):
         for i in range(0, K):
             # run the selected action and observe next state and reward
             x_t1_col, r_t, terminal = game_state.frame_step(a_t)
-            x_t1 = cv2.cvtColor(cv2.resize(x_t1_col, (80, 80)), cv2.COLOR_BGR2GRAY)
+            x_t1 = cv2.cvtColor(cv2.resize(x_t1_col, INPUT_DIMS), cv2.COLOR_BGR2GRAY)
             ret, x_t1 = cv2.threshold(x_t1, 1, 255, cv2.THRESH_BINARY)
-            x_t1 = np.reshape(x_t1, (80, 80, 1))
+            x_t1 = np.reshape(x_t1, (INPUT_DIMS[0], INPUT_DIMS[1], 1))
             s_t1 = np.append(x_t1, s_t[:, :, 0:3], axis=2)
 
             # store the transition in D
@@ -194,9 +188,8 @@ def trainNetwork(s, readout, h_fc1, sess):
             state = "explore"
         else:
             state = "train"
-        print
-        "TIMESTEP", t, "/ STATE", state, "/ LINES", game_state.total_lines, "/ EPSILON", epsilon, "/ ACTION", action_index, "/ REWARD", r_t, "/ Q_MAX %e" % np.max(
-            readout_t)
+        print("TIMESTEP", t, "/ STATE", state, "/ LINES", game_state.total_lines, "/ EPSILON", epsilon, "/ ACTION", action_index, "/ REWARD", r_t, "/ Q_MAX %e" % np.max(
+            readout_t))
 
         # write info to files
         '''
@@ -207,15 +200,11 @@ def trainNetwork(s, readout, h_fc1, sess):
         '''
 
 
-def playGame():
+def play_game():
     sess = tf.InteractiveSession()
-    s, readout, h_fc1 = createNetwork()
-    trainNetwork(s, readout, h_fc1, sess)
-
-
-def main():
-    playGame()
+    s, readout, h_fc1 = create_network()
+    train_network(s, readout, h_fc1, sess)
 
 
 if __name__ == "__main__":
-    main()
+    play_game()
