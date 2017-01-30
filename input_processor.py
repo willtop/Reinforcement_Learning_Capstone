@@ -38,7 +38,8 @@ class GameState:
         score_im = score_im.filter(ImageFilter.SHARPEN)
         enhancer = ImageEnhance.Contrast(score_im)
         score_im = enhancer.enhance(10)
-        score = pytesseract.image_to_string(score_im, config='digits_only')
+        score_im = Image.fromarray(cv2.cvtColor(np.asarray(score_im), cv2.COLOR_RGB2GRAY))
+        score = pytesseract.image_to_string(score_im, config='-psm 7 digits_only')
         print(score)
 
         if True:
@@ -47,7 +48,7 @@ class GameState:
             cv2.imshow('screen',  cv2.cvtColor(screen, cv2.COLOR_RGB2BGR))
             cv2.namedWindow('score', cv2.WINDOW_NORMAL)
             cv2.resizeWindow('score', (self.score_box[2]-self.score_box[0])*3, (self.score_box[3]-self.score_box[1])*3)
-            cv2.imshow("score", cv2.cvtColor(np.asarray(score_im), cv2.COLOR_RGB2BGR))
+            cv2.imshow("score", cv2.cvtColor(np.asarray(score_im), cv2.COLOR_GRAY2BGR))
 
         return screen, reward, terminal
 
