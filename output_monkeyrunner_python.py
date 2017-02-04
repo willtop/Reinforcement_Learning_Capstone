@@ -4,6 +4,7 @@ import time
 
 DATA_END = '|'
 
+
 class OutputMonkeyrunnerPython:
 
     def __init__(self):
