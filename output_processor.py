@@ -1,9 +1,10 @@
 from output_monkeyrunner_python import OutputMonkeyrunnerPython
 from output_arduino import OutputArduino
 
-output = OutputMonkeyrunnerPython()
-# output = OutputArduino()
+output_processor = OutputMonkeyrunnerPython()
+# output_processor = OutputArduino()
 
-for i in range(0, 2):
-    output.tap(200, 100)
+if __name__ == '__main__':
+    for i in range(0, 2):
+        output_processor.tap(200, 100)
 
