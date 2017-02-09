@@ -3,5 +3,5 @@ class OutputArduino:
     def __init__(self):
         pass
 
-    def tap(self, x, y):
+    def tap(self, point):
         pass
