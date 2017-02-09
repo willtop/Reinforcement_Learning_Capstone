@@ -1,6 +1,6 @@
-'''
+"""
 This file must be run with the monkeyrunner tool from the Android SDK.
-'''
+"""
 
 import time
 import socket

@@ -50,11 +50,16 @@ class Game:
 
     def __check_terminal_state(self, screenshot):
         for pixel in self.params.terminal_state_map:
-            if screenshot[pixel] != self.params.terminal_state_map[pixel]:
+            if self.__get_pixel_color(screenshot, pixel) != self.params.terminal_state_map[pixel]:
                 return False
         return True
 
     def __denormalize_screen_position(self, position):
         x = int(position[0] * self.emulator_resolution[0])
         y = int(position[1] * self.emulator_resolution[1])
-        return (x, y)
+        return x, y
+
+    def __get_pixel_color(self, screenshot, position):
+        x = int(position[0] * screenshot.shape[0])
+        y = int(position[1] * screenshot.shape[1])
+        return screenshot[x, y]
