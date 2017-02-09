@@ -11,10 +11,17 @@ class Game:
     box_width = bounding_box[2] - bounding_box[0]
     box_height = bounding_box[3] - bounding_box[1]
 
-    def __init__(self, dims, tap_position, restart_tap_position):
+    '''
+    terminal_state_detector = {
+        [x, y]: [r, g, b]
+    }
+    '''
+
+    def __init__(self, dims, tap_position, restart_tap_position, terminal_state_detector):
         self.dims = dims
         self.tap_position = tap_position
         self.restart_tap_position = restart_tap_position
+        self.terminal_state_detector = terminal_state_detector
         self.output_processor = output_processor
 
     def frame_step(self, input_vec):
@@ -47,4 +54,7 @@ class Game:
         output_processor.tap(self.restart_tap_position[0], self.restart_tap_position[1])
 
     def __check_terminal_state(self, screenshot):
-        return False
+        for pixel in self.terminal_state_detector:
+            if screenshot[pixel] != self.terminal_state_detector[pixel]:
+                return False
+        return True
