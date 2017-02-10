@@ -6,6 +6,7 @@ import time
 import socket
 from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
 
+DEBUG = False
 DATA_END = '|'
 
 print('Connecting to MonkeyRunner...')
@@ -30,9 +31,10 @@ while 1:
         data = split_buffer[0]
         buffer = buffer[split_index+1:]
         # Process message
-        print('Received at:')
-        print(time.time())
-        print(data)
+        if DEBUG:
+            print('Received at:')
+            print(time.time())
+            print(data)
         parts = data.split(',')
         x = int(parts[0])
         y = int(parts[1])

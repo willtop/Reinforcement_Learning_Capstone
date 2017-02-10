@@ -5,6 +5,7 @@ game.GameState() object
 with framestep function
 """
 
+from game_params import *
 import tensorflow as tf
 import cv2
 
@@ -16,6 +17,7 @@ from BuildingBlocks import DataDistribution
 from game_wrapper import Game
 
 GAME = 'stack'  # the name of the game being played for log files
+GAME_PARAMS = stack_params
 ACTIONS = 2  # number of valid actions
 INPUT_DIMS = (60, 100)
 NUM_FRAMES = 4 # Number of frames in each training data point
@@ -115,7 +117,7 @@ def create_network():
     # readout_action = tf.reduce_sum(tf.mul(readout, a), reduction_indices=1)
     # cost = tf.reduce_mean(tf.square(y - readout_action))
     # train_step = tf.train.AdamOptimizer(LEARNING_RATE).minimize(cost)
-    
+
     # # open up a game state to communicate with emulator
     # game_state = game.GameState()
 
@@ -129,7 +131,7 @@ def create_network():
     # # get the first state by doing nothing and preprocess the image to INPUT_DIMSx4
     # do_nothing = np.zeros(ACTIONS)
     # do_nothing[0] = 1
-    
+
     # # Call this four times to get s_t_init?
     # x_t, r_0, terminal = game_state.frame_step(do_nothing)
     # x_t = cv2.cvtColor(cv2.resize(x_t, INPUT_DIMS), cv2.COLOR_RGB2GRAY)
@@ -229,7 +231,8 @@ def create_network():
             # h_file.write(",".join([str(x) for x in h_fc1.eval(feed_dict={s:[s_t]})[0]]) + '\n')
             # cv2.imwrite("logs_tetris/frame" + str(t) + ".png", x_t1)
         # '''
-        
+
+
 def play_game(s, readout, h_fc1, sess, epsilon, restore = False):
     '''
     Plays the game and saves the training data to a python collections.
@@ -242,9 +245,9 @@ def play_game(s, readout, h_fc1, sess, epsilon, restore = False):
     '''
     # screenshot_dims = []
     # game_params={'restart_tap_position': (100,100)}
-    
+
     # open up a game state to communicate with emulator
-    game = Game(INPUT_DIMS, monkeyrunner=False, auto_restart=False)
+    game = Game(INPUT_DIMS, GAME_PARAMS, auto_restart=False)
 
     # store the previous observations in replay memory
     D = deque()
@@ -254,17 +257,17 @@ def play_game(s, readout, h_fc1, sess, epsilon, restore = False):
     # h_file = open("logs_" + GAME + "/hidden.txt", 'w')
     
     if restore:
-      # saving and loading networks
-      saver = tf.train.Saver()
-      sess.run(tf.initialize_all_variables())
-      checkpoint = tf.train.get_checkpoint_state("saved_networks")
-      if checkpoint and checkpoint.model_checkpoint_path:
-          saver.restore(sess, checkpoint.model_checkpoint_path)
-          print("Successfully loaded:", checkpoint.model_checkpoint_path)
-      else:
-          print("Could not find old network weights")
+        # saving and loading networks
+        saver = tf.train.Saver()
+        sess.run(tf.initialize_all_variables())
+        checkpoint = tf.train.get_checkpoint_state("saved_networks")
+        if checkpoint and checkpoint.model_checkpoint_path:
+            saver.restore(sess, checkpoint.model_checkpoint_path)
+            print("Successfully loaded:", checkpoint.model_checkpoint_path)
+        else:
+            print("Could not find old network weights")
 
-     # get the first state by doing nothing and preprocess the image to INPUT_DIMSx4
+    # get the first state by doing nothing and preprocess the image to INPUT_DIMSx4
     do_nothing = np.zeros(ACTIONS)
     do_nothing[0] = 1
     
@@ -309,7 +312,7 @@ def play_game(s, readout, h_fc1, sess, epsilon, restore = False):
         s_t = s_t1
         t += 1
 
-        print("TIMESTEP", t, "/ EPSILON", epsilon, "/ ACTION", action_index, "/ Q_MAX %e" % np.max(readout_t))
+        print("TIMESTEP", t, "/ EPSILON", epsilon, "/ ACTION", action_index, "/ Q_MAX %e" % np.max(readout_t), "/ TERMINAL ", terminal)
 
     
 # def train_network(s, readout, h_fc1, sess, data):
@@ -361,7 +364,7 @@ if __name__ == "__main__":
     s, readout, h_fc1, train_step = create_network()
     epsilon = INITIAL_EPSILON
     # while True:
-    sess.run(tf.initialize_all_variables())
+    sess.run(tf.global_variables_initializer())
     data = play_game(s, readout, h_fc1, sess, epsilon=1)
       # train_network(s, readout, h_fc1, train_step, sess, data)
       # # scale down epsilon
