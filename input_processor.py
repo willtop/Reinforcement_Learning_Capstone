@@ -1,3 +1,4 @@
+#!python3
 # First of all, introduce pysseract into the python path
 # import sys
 # sys.path.append('C:\\Users\\happy\\AppData\\Local\\Tesseract-OCR')
