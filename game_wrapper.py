@@ -18,10 +18,6 @@ class Game:
         self.auto_restart = auto_restart
         self.output_processor = output_processor
 
-        if self.RENDER_DISPLAY:
-            cv2.namedWindow('screen', cv2.WINDOW_NORMAL)
-            cv2.resizeWindow('screen', self.screenshot_dims[0] * 3, self.screenshot_dims[1] * 3)
-
     def frame_step(self, input_vec):
         if sum(input_vec) != 1:
             raise ValueError('Multiple input actions!')
@@ -46,7 +42,10 @@ class Game:
             self.restart()
 
         if self.RENDER_DISPLAY:
+            cv2.namedWindow('screen', cv2.WINDOW_NORMAL)
+            cv2.resizeWindow('screen', self.screenshot_dims[0] * 3, self.screenshot_dims[1] * 3)
             cv2.imshow('screen', cv2.cvtColor(np.transpose(screenshot), cv2.COLOR_GRAY2BGR))
+            cv2.waitKey(1)
 
         return screenshot, terminal
 
