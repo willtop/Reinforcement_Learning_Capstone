@@ -7,13 +7,13 @@ import numpy as np
 
 class GameState:
 
-    bounding_box = (0, 107, 562, 1080)
+    bounding_box = (0, 120, 800, 800)
     box_width = bounding_box[2] - bounding_box[0]
     box_height = bounding_box[3] - bounding_box[1]
 
     def __init__(self, dims):
         self.dims = dims
-        self.score_box = (200, 100, 400, 200)
+        self.score_box = (300, 160, 450, 285)
 
     def start(self):
         return
