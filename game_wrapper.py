@@ -1,5 +1,4 @@
 import cv2
-
 import numpy as np
 from PIL import Image, ImageGrab
 from output_processor import output_processor
@@ -8,7 +7,7 @@ from output_processor import output_processor
 class Game:
     RENDER_DISPLAY = True
     emulator_resolution = (480, 800)
-    bounding_box = (0, 0, 350, 600)  # Daniel Laptop
+    bounding_box = (0, 70, 292, 560)  # Daniel Laptop
     # bounding_box = (0, 0, 350, 600)  # Someone else's machine
     box_width = bounding_box[2] - bounding_box[0]
     box_height = bounding_box[3] - bounding_box[1]
@@ -29,8 +28,8 @@ class Game:
 
         chosen_action = np.argmax(input_vec)
         actions = {
-            0: lambda: None,
-            1: output_processor.tap(self.__denormalize_screen_position(self.params.tap_position))
+            0: lambda: True,
+            1: lambda: output_processor.tap(self.__denormalize_screen_position(self.params.tap_position))
         }
         actions[chosen_action]()
 
@@ -49,17 +48,21 @@ class Game:
         output_processor.tap(self.__denormalize_screen_position(self.params.restart_tap_position))
 
     def __check_terminal_state(self, screenshot):
-        for pixel in self.params.terminal_state_map:
-            if self.__get_pixel_color(screenshot, pixel) != self.params.terminal_state_map[pixel]:
-                return False
-        return True
+        return all(x in self.get_pixel_color(screenshot, self.params.terminal_pixel_position) for x in self.params.terminal_pixel_color)
 
     def __denormalize_screen_position(self, position):
         x = int(position[0] * self.emulator_resolution[0])
         y = int(position[1] * self.emulator_resolution[1])
         return x, y
 
-    def __get_pixel_color(self, screenshot, position):
-        x = int(position[0] * screenshot.shape[0])
-        y = int(position[1] * screenshot.shape[1])
-        return screenshot[x, y]
+    @staticmethod
+    def denormalize_screenshot_position(screenshot, position):
+        # numpy arrays are row, colum: so shape is (y, x, channel)
+        x = int(position[0] * screenshot.shape[1])
+        y = int(position[1] * screenshot.shape[0])
+        return x, y
+
+    @staticmethod
+    def get_pixel_color(screenshot, position):
+        x, y = Game.denormalize_screenshot_position(screenshot, position)
+        return screenshot[y, x] # numpy arrays are row, colum: so shape is (y, x, channel)
