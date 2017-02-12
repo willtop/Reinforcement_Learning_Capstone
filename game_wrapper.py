@@ -2,15 +2,25 @@ import cv2
 import numpy as np
 from PIL import Image, ImageGrab
 from output_processor import output_processor
+import win32gui
 
 
 class Game:
     RENDER_DISPLAY = True
     emulator_resolution = (480, 800)
-    bounding_box = (0, 70, 292, 560)  # Daniel Laptop
-    # bounding_box = (0, 0, 350, 600)  # Someone else's machine
+    # corner = (0,0)
+    # bounding_box = (0, 70, 292, 560)  # Daniel Laptop
+    # bounding_box = (20, 100, 380, 700)  # Jason's laptop - Emulator
+    
+    # Jason's Leapdroid Settings
+    corner = win32gui.GetWindowRect(win32gui.FindWindow(None,"Leapdroid"))
+    bounding_box = (corner[0]+10, corner[1]+30, corner[0]+emulator_resolution[0]+10, corner[1]+emulator_resolution[1])
+    # print("Found box: {}".format(bounding_box))
+    
     box_width = bounding_box[2] - bounding_box[0]
     box_height = bounding_box[3] - bounding_box[1]
+    #Terminal state check pixel colour tolerance
+    tolerance = 5
 
     def __init__(self, screenshot_dims, params, auto_restart=True):
         self.screenshot_dims = screenshot_dims
@@ -40,7 +50,14 @@ class Game:
         terminal = self.__check_terminal_state(screenshot)
         if self.auto_restart and terminal:
             self.restart()
-
+        
+        #Check location of terminal position
+        # screenshot.flags['WRITEABLE'] = True
+        # terminal_pos = [self.denormalize_screenshot_position(screenshot,v) for v in self.params.terminal_pixel_position]
+        # for i,pos in enumerate(terminal_pos):
+          # print("pos {}: {}".format(i,screenshot[pos[0],pos[1]]))
+          # screenshot[pos[0],pos[1]]=0
+        
         if self.RENDER_DISPLAY:
             cv2.namedWindow('screen', cv2.WINDOW_NORMAL)
             cv2.resizeWindow('screen', self.screenshot_dims[0] * 3, self.screenshot_dims[1] * 3)
@@ -54,11 +71,15 @@ class Game:
         output_processor.tap(self.__denormalize_screen_position(self.params.restart_tap_position))
 
     def __check_terminal_state(self, screenshot):
-        return self.get_pixel_color(screenshot, self.params.terminal_pixel_position) == self.params.terminal_pixel_color
+        check = True
+        for pixel, colour in zip(self.params.terminal_pixel_position, self.params.terminal_pixel_color):
+            if self.get_pixel_color(screenshot, pixel) < colour-self.tolerance or self.get_pixel_color(screenshot, pixel) > colour+self.tolerance:
+                check = False
+        return  check
 
     def __denormalize_screen_position(self, position):
-        x = int(position[0] * self.emulator_resolution[0])
-        y = int(position[1] * self.emulator_resolution[1])
+        x = int(position[0] * self.emulator_resolution[0] + self.corner[0])
+        y = int(position[1] * self.emulator_resolution[1] + self.corner[1])
         return x, y
 
     @staticmethod

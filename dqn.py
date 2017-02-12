@@ -17,7 +17,7 @@ from BuildingBlocks import DataDistribution
 from game_wrapper import Game
 
 GAME = 'stack'  # the name of the game being played for log files
-GAME_PARAMS = stack_params
+GAME_PARAMS = Jason_stack_params
 ACTIONS = 2  # number of valid actions
 INPUT_DIMS = (60, 100)
 NUM_FRAMES = 4 # Number of frames in each training data point
@@ -98,11 +98,11 @@ def create_network():
     cost = tf.reduce_mean(tf.square(y - readout_action))
     train_step = tf.train.AdamOptimizer(LEARNING_RATE).minimize(cost)
     
-    print(h_conv1.get_shape())
-    print(h_pool1.get_shape())
-    print(h_conv2.get_shape())
-    print(h_conv3.get_shape())
-    print(h_conv3_flat.get_shape())
+    # print(h_conv1.get_shape())
+    # print(h_pool1.get_shape())
+    # print(h_conv2.get_shape())
+    # print(h_conv3.get_shape())
+    # print(h_conv3_flat.get_shape())
 
     return s, readout, h_fc1, train_step
 
@@ -278,9 +278,9 @@ def play_game(s, readout, h_fc1, sess, epsilon, restore = False):
     x_t_2, terminal = game.frame_step(do_nothing)
     x_t_3, terminal = game.frame_step(do_nothing)
     x_t_4, terminal = game.frame_step(do_nothing)
-    print(x_t_1.shape)
+    # print(x_t_1.shape)
     s_t = np.stack((x_t_1, x_t_2, x_t_3, x_t_4),axis=2)
-    print(s_t.shape)
+    # print(s_t.shape)
     
     t = 0
     while t < REPLAY_MEMORY:
@@ -296,7 +296,10 @@ def play_game(s, readout, h_fc1, sess, epsilon, restore = False):
             a_t[action_index] = 1
             
         # Apply action and get 3 next
-        x_t1[0], terminal = game.frame_step(a_t)
+        x_t1git[0], terminal = game.frame_step(a_t)
+        ### DEBUG ###
+        # x_t1[0], terminal = game.frame_step(do_nothing)
+        ######
         for i in range(1, K):
             # Get next three
             x_t1[i], terminal = game.frame_step(do_nothing)
