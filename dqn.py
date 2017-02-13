@@ -296,7 +296,7 @@ def play_game(s, readout, h_fc1, sess, epsilon, restore = False):
             a_t[action_index] = 1
             
         # Apply action and get 3 next
-        x_t1git[0], terminal = game.frame_step(a_t)
+        x_t1[0], terminal = game.frame_step(a_t)
         ### DEBUG ###
         # x_t1[0], terminal = game.frame_step(do_nothing)
         ######
