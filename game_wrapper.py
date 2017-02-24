@@ -16,9 +16,9 @@ class Game:
     corner = win32gui.GetWindowRect(win32gui.FindWindow(None,"Leapdroid"))
     bounding_box = (corner[0]+10, corner[1]+30, corner[0]+emulator_resolution[0]+10, corner[1]+emulator_resolution[1])
     # print("Found box: {}".format(bounding_box))
-    
     box_width = bounding_box[2] - bounding_box[0]
     box_height = bounding_box[3] - bounding_box[1]
+    
     #Terminal state check pixel colour tolerance
     tolerance = 5
 
@@ -33,6 +33,8 @@ class Game:
             raise ValueError('Multiple input actions!')
 
         raw_im = ImageGrab.grab(bbox=self.bounding_box)
+        score_im = np.asarray(raw_im.crop(self.params.score_box))
+        score_im = cv2.cvtColor(score_im, cv2.COLOR_RGB2GRAY)
         im = raw_im.resize(self.screenshot_dims, Image.ANTIALIAS)
         im = im.convert(mode="L")
         screenshot = np.asarray(im)
@@ -62,12 +64,16 @@ class Game:
             cv2.namedWindow('screen', cv2.WINDOW_NORMAL)
             cv2.resizeWindow('screen', self.screenshot_dims[0] * 3, self.screenshot_dims[1] * 3)
             cv2.imshow('screen', cv2.cvtColor(np.transpose(screenshot), cv2.COLOR_GRAY2BGR))
+            cv2.namedWindow('score', cv2.WINDOW_NORMAL)
+            cv2.resizeWindow('score', (self.params.score_box[2]-self.params.score_box[0])*3, (self.params.score_box[3]-self.params.score_box[1])*3)
+            cv2.imshow('score', cv2.cvtColor(score_im, cv2.COLOR_GRAY2BGR))
             cv2.waitKey(1)
 
-        return screenshot, terminal
+        return screenshot, score_im, terminal
 
     def restart(self):
         print('>>>>>>> RESTART')
+        output_processor.tap(self.__denormalize_screen_position(self.params.restart_tap_position))
         output_processor.tap(self.__denormalize_screen_position(self.params.restart_tap_position))
 
     def __check_terminal_state(self, screenshot):

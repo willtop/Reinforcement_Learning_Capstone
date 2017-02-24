@@ -14,7 +14,7 @@ import random
 import numpy as np
 from collections import deque
 from BuildingBlocks import DataDistribution
-from game_wrapper import Game
+# from game_wrapper import Game
 
 GAME = 'stack'  # the name of the game being played for log files
 GAME_PARAMS = Jason_stack_params
@@ -26,10 +26,10 @@ OBSERVE = 500.  # timesteps to observe before training
 EXPLORE = 500.  # frames over which to anneal epsilon
 FINAL_EPSILON = 0.05  # final value of epsilon
 INITIAL_EPSILON = 1.0  # starting value of epsilon
-REPLAY_MEMORY = 100000  # number of previous transitions to remember
+REPLAY_MEMORY = 100  # number of previous transitions to remember
 # Total size of training data
 TRAINING_ITER = 5 #Number of training iterations over the training data
-BATCH = 32  # size of minibatch
+BATCH = 12  # size of minibatch
 LEARNING_RATE = 1e-6
 K = 4  # only select an action every Kth frame, repeat prev for others
 
@@ -104,7 +104,7 @@ def create_network():
     # print(h_conv3.get_shape())
     # print(h_conv3_flat.get_shape())
 
-    return s, readout, h_fc1, train_step
+    return s, readout, h_fc1, train_step, a, y
 
 # def train_network_dqn(s, readout, h_fc1, sess):
     # '''
@@ -250,7 +250,7 @@ def play_game(s, readout, h_fc1, sess, epsilon, restore = False):
     game = Game(INPUT_DIMS, GAME_PARAMS, auto_restart=False)
 
     # store the previous observations in replay memory
-    D = deque()
+    D = []
 
     # printing
     # a_file = open("logs_" + GAME + "/readout.txt", 'w')
@@ -269,15 +269,17 @@ def play_game(s, readout, h_fc1, sess, epsilon, restore = False):
 
     # get the first state by doing nothing and preprocess the image to INPUT_DIMSx4
     do_nothing = np.zeros(ACTIONS)
+    tap = np.zeros(ACTIONS)
     do_nothing[0] = 1
+    tap[1] = 1
     
-    game.restart()
+    game.frame_step(tap)
 
     x_t1 = [1,2,3,4]
-    x_t_1, terminal = game.frame_step(do_nothing)
-    x_t_2, terminal = game.frame_step(do_nothing)
-    x_t_3, terminal = game.frame_step(do_nothing)
-    x_t_4, terminal = game.frame_step(do_nothing)
+    x_t_1, _, terminal = game.frame_step(do_nothing)
+    x_t_2, _, terminal = game.frame_step(do_nothing)
+    x_t_3, _, terminal = game.frame_step(do_nothing)
+    x_t_4, _, terminal = game.frame_step(do_nothing)
     # print(x_t_1.shape)
     s_t = np.stack((x_t_1, x_t_2, x_t_3, x_t_4),axis=2)
     # print(s_t.shape)
@@ -288,6 +290,7 @@ def play_game(s, readout, h_fc1, sess, epsilon, restore = False):
         readout_t = readout.eval(feed_dict={s: [s_t]})[0]
         a_t = np.zeros([ACTIONS])
         action_index = 0
+        Q_max_last = np.max(readout_t)
         if random.random() <= epsilon:
             action_index = random.randrange(ACTIONS)
             a_t[action_index] = 1
@@ -296,80 +299,70 @@ def play_game(s, readout, h_fc1, sess, epsilon, restore = False):
             a_t[action_index] = 1
             
         # Apply action and get 3 next
-        x_t1[0], terminal = game.frame_step(a_t)
+        x_t1[0], _, terminal = game.frame_step(a_t)
         ### DEBUG ###
         # x_t1[0], terminal = game.frame_step(do_nothing)
         ######
         for i in range(1, K):
             # Get next three
-            x_t1[i], terminal = game.frame_step(do_nothing)
+            x_t1[i], score, terminal = game.frame_step(do_nothing)
         s_t1 = np.stack((x_t1[0], x_t1[1], x_t1[2], x_t1[3]), axis=2)
+        
+        if terminal:
+          game.restart()
             
         # store the transition in D
-        D.append((s_t, a_t, s_t1, terminal))
-        if len(D) > REPLAY_MEMORY:
-            print("This should never happen!!")
-            D.popleft()
+        D.append([s_t, a_t, s_t1, score, Q_max_last, terminal])
             
         # update the old values
         s_t = s_t1
         t += 1
 
-        print("TIMESTEP", t, "/ EPSILON", epsilon, "/ ACTION", action_index, "/ Q_MAX %e" % np.max(readout_t), "/ TERMINAL ", terminal)
-
+        print("TIMESTEP", t, "/ EPSILON", epsilon, "/ ACTION", action_index, "/ Q_MAX %e" % Q_max_last, "/ TERMINAL ", terminal)
+        
+    # Store Data into a DataDistribution class and return
+    return D
     
-# def train_network(s, readout, h_fc1, sess, data):
-    # '''
-    # Trains the network given the data saved from playing the game.
-    # '''
-    # saver = tf.train.Saver()
-    # sess.run(tf.initialize_all_variables())
-    # checkpoint = tf.train.get_checkpoint_state("saved_networks")
-    # if checkpoint and checkpoint.model_checkpoint_path:
-        # saver.restore(sess, checkpoint.model_checkpoint_path)
-        # print("Successfully loaded:", checkpoint.model_checkpoint_path)
-    # else:
-        # print("Could not find old network weights")
+def train_network(s, a, y, train_step, sess, data, iter):
+    '''
+    Trains the network given the data saved from playing the game.
+    '''
+    saver = tf.train.Saver()
+    sess.run(tf.initialize_all_variables())
+    checkpoint = tf.train.get_checkpoint_state("saved_networks")
+    if checkpoint and checkpoint.model_checkpoint_path:
+        saver.restore(sess, checkpoint.model_checkpoint_path)
+        print("Successfully loaded:", checkpoint.model_checkpoint_path)
+    else:
+        print("Could not find old network weights")
   
-      # # only train if done observing
-      # if t > OBSERVE:
-          # # sample a minibatch to train on
-          # minibatch = random.sample(D, BATCH)
+    i = 0
+    # only train if done observing
+    while i < TRAINING_ITER:
+        # sample a minibatch to train on
+        state, action, reward, i = data.sample(BATCH)
+        # action = tf.reshape(action, [BATCH, ACTIONS])
 
-          # # get the batch variables
-          # s_j_batch = [d[0] for d in minibatch]
-          # a_batch = [d[1] for d in minibatch]
-          # r_batch = [d[2] for d in minibatch]
-          # s_j1_batch = [d[3] for d in minibatch]
-
-          # y_batch = []
-          # readout_j1_batch = readout.eval(feed_dict={s: s_j1_batch})
-          # for i in range(0, len(minibatch)):
-              # # if terminal only equals reward
-              # if minibatch[i][4]:
-                  # y_batch.append(r_batch[i])
-              # else:
-                  # y_batch.append(r_batch[i] + GAMMA * np.max(readout_j1_batch[i]))
-
-          # # perform gradient step
-          # train_step.run(feed_dict={
-              # y: y_batch,
-              # a: a_batch,
-              # s: s_j_batch})
-              
-              # # save progress every 10000 iterations
-      # if t % 10000 == 0:
-          # saver.save(sess, 'saved_networks/' + GAME + '-dqn', global_step=t)
+        # assert all(x.shape == (INPUT_DIMS[0], INPUT_DIMS[1], NUM_FRAMES) for x in state)
+        # assert all(x.shape == (ACTIONS) for x in action)
+        # perform gradient step
+        train_step.run(feed_dict={y: reward, a: action, s: state})
+            
+    saver.save(sess, 'saved_networks/' + GAME + '-dqn', global_step=iter)
 
 
 if __name__ == "__main__":
     sess = tf.InteractiveSession()
-    s, readout, h_fc1, train_step = create_network()
+    s, readout, h_fc1, train_step, a, y = create_network()
     epsilon = INITIAL_EPSILON
     # while True:
     sess.run(tf.global_variables_initializer())
-    data = play_game(s, readout, h_fc1, sess, epsilon=1)
-      # train_network(s, readout, h_fc1, train_step, sess, data)
-      # # scale down epsilon
-      # if epsilon > FINAL_EPSILON:
-          # epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
+    # data = play_game(s, readout, h_fc1, sess, epsilon=1)
+    # np.save("Test_Data", data)
+    data =  np.load("Test_Data.npy")
+    data = DataDistribution(data, GAMMA)
+    data.processInput()
+    train_network(s, a, y, train_step, sess, data, 1)
+    # # scale down epsilon
+    # if epsilon > FINAL_EPSILON:
+        # epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
