@@ -39,20 +39,25 @@ class DataDistribution:
     self.action = data[:,1]
     self.reward = []
     toDelete = []
+    toAppend = []
     
     score = 0
     
-    print(data.shape)
-    print(self.state.shape)
+    # print(len(data))
+    # print(data.shape)
+    # print(self.state.shape)
     
     for i,d in enumerate(data):
       # No Q value for last data point
-      if i == len(data):
+      print("Loop {}".format(i))
+      if i == len(data)-1:
+        toDelete.append(i)
         break
         
-      # If we died, no reward
+      # If we died, negative reward for both actions
       if d[5]:
-        self.reward.append(0)
+        self.reward.append(-1)
+        toAppend.append(d[0])
         ScoreCalculator.resertScore()
         score = 0
         continue
@@ -61,30 +66,42 @@ class DataDistribution:
       #if score calculator failed, delete data point
       if new_score == -1:
         toDelete.append(i)
+        print("Delete score")
         continue
-      #if score increased, then we succeed
+      #if score increased, then we succeeded
       elif new_score > score:
         reward = 1 + self.discount*data[i+1][4]
         score = new_score
       #we did nothing this time
       else:
-        reward = self.discount*data[i+1][4]
+        reward = 0.5 + self.discount*data[i+1][4]
       self.reward.append(reward)
       
     self.state = np.delete(self.state, toDelete)      
     self.action = np.delete(self.action, toDelete)      
     self.reward = np.array(self.reward)
     
+    #vstack data to turn into ndarrays
+    self.state = np.stack(self.state)
+    self.action = np.stack(self.action)
+    self.reward = np.stack(self.reward)
+    
+    toAppend = np.array(toAppend)
+    actionAppend = np.zeros((len(toAppend),2))
+    actionAppend[:,0] = 1
+    rewardAppend = np.ones((len(toAppend)))*-0.5
+    # print(rewardAppend)
+    # print(self.reward)
+   
+    self.state = np.vstack((self.state, toAppend))
+    self.action = np.vstack((self.action, actionAppend))
+    self.reward = np.concatenate((self.reward, rewardAppend))
+        
     assert self.state.shape[0] == self.reward.shape[0], (
           'state.shape: %s reward.shape: %s' % (self.state.shape, self.reward.shape))
     assert self.state.shape[0] == self.action.shape[0], (
           'state.shape: %s action.shape: %s' % (self.state.shape, self.action.shape))
           
-    #vstack data to turn into ndarrays
-    self.state = np.stack(self.state)
-    self.action = np.stack(self.action)
-    self.reward = np.stack(self.reward)
-
     self._num_examples = self.state.shape[0]
     self._index_in_epoch = 0
     self._epochs_completed = 0

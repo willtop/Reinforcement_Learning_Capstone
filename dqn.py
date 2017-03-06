@@ -11,27 +11,29 @@ import cv2
 
 # import input_processor as game
 import random
+import time
+import math
 import numpy as np
 from collections import deque
 from BuildingBlocks import DataDistribution
-# from game_wrapper import Game
+from game_wrapper import Game
 
 GAME = 'stack'  # the name of the game being played for log files
 GAME_PARAMS = Jason_stack_params
 ACTIONS = 2  # number of valid actions
 INPUT_DIMS = (60, 100)
 NUM_FRAMES = 4 # Number of frames in each training data point
-GAMMA = 0.99  # decay rate of past observations
-OBSERVE = 500.  # timesteps to observe before training
-EXPLORE = 500.  # frames over which to anneal epsilon
-FINAL_EPSILON = 0.05  # final value of epsilon
-INITIAL_EPSILON = 1.0  # starting value of epsilon
-REPLAY_MEMORY = 100  # number of previous transitions to remember
+GAMMA = 0.90  # decay rate of past observations
+# OBSERVE = 500.  # timesteps to observe before training
+EXPLORE = 40  # iterations over which to anneal epsilon
+FINAL_EPSILON = 1  # final value of epsilon
+INITIAL_EPSILON = 0.1  # starting value of epsilon
+# a value of 0 corresponds to random decision
+REPLAY_MEMORY = 2000  # number of previous transitions to remember
 # Total size of training data
 TRAINING_ITER = 5 #Number of training iterations over the training data
-BATCH = 12  # size of minibatch
+BATCH = 32  # size of minibatch
 LEARNING_RATE = 1e-6
-K = 4  # only select an action every Kth frame, repeat prev for others
 
 
 def weight_variable(shape):
@@ -94,7 +96,7 @@ def create_network():
     # define the cost function
     a = tf.placeholder("float", [None, ACTIONS])
     y = tf.placeholder("float", [None])
-    readout_action = tf.reduce_sum(tf.mul(readout, a), reduction_indices=1)
+    readout_action = tf.reduce_sum(tf.multiply(readout, a), reduction_indices=1)
     cost = tf.reduce_mean(tf.square(y - readout_action))
     train_step = tf.train.AdamOptimizer(LEARNING_RATE).minimize(cost)
     
@@ -260,17 +262,19 @@ def play_game(s, readout, h_fc1, sess, epsilon, restore = False):
         # saving and loading networks
         saver = tf.train.Saver()
         sess.run(tf.initialize_all_variables())
-        checkpoint = tf.train.get_checkpoint_state("saved_networks")
+        checkpoint = tf.train.get_checkpoint_state("saved_networks/Try 3")
         if checkpoint and checkpoint.model_checkpoint_path:
             saver.restore(sess, checkpoint.model_checkpoint_path)
             print("Successfully loaded:", checkpoint.model_checkpoint_path)
         else:
             print("Could not find old network weights")
+    else:
+        print("Did not restore network")
 
     # get the first state by doing nothing and preprocess the image to INPUT_DIMSx4
     do_nothing = np.zeros(ACTIONS)
-    tap = np.zeros(ACTIONS)
     do_nothing[0] = 1
+    tap = np.zeros(ACTIONS)
     tap[1] = 1
     
     game.frame_step(tap)
@@ -289,21 +293,21 @@ def play_game(s, readout, h_fc1, sess, epsilon, restore = False):
         # choose an action epsilon greedily
         readout_t = readout.eval(feed_dict={s: [s_t]})[0]
         a_t = np.zeros([ACTIONS])
-        action_index = 0
         Q_max_last = np.max(readout_t)
-        if random.random() <= epsilon:
-            action_index = random.randrange(ACTIONS)
-            a_t[action_index] = 1
+        Prob_Tap = np.exp(epsilon*readout_t[1])/np.sum(np.exp(epsilon*readout_t))
+        if random.random() <= Prob_Tap:
+            a_t[1] = 1
+            action_index = 1
         else:
-            action_index = np.argmax(readout_t)
-            a_t[action_index] = 1
+            a_t[0] = 1
+            action_index = 0
             
         # Apply action and get 3 next
         x_t1[0], _, terminal = game.frame_step(a_t)
         ### DEBUG ###
         # x_t1[0], terminal = game.frame_step(do_nothing)
         ######
-        for i in range(1, K):
+        for i in range(1, NUM_FRAMES):
             # Get next three
             x_t1[i], score, terminal = game.frame_step(do_nothing)
         s_t1 = np.stack((x_t1[0], x_t1[1], x_t1[2], x_t1[3]), axis=2)
@@ -323,18 +327,21 @@ def play_game(s, readout, h_fc1, sess, epsilon, restore = False):
     # Store Data into a DataDistribution class and return
     return D
     
-def train_network(s, a, y, train_step, sess, data, iter):
+def train_network(s, a, y, train_step, sess, data, iter, restore=False):
     '''
     Trains the network given the data saved from playing the game.
     '''
     saver = tf.train.Saver()
-    sess.run(tf.initialize_all_variables())
-    checkpoint = tf.train.get_checkpoint_state("saved_networks")
-    if checkpoint and checkpoint.model_checkpoint_path:
-        saver.restore(sess, checkpoint.model_checkpoint_path)
-        print("Successfully loaded:", checkpoint.model_checkpoint_path)
+    if restore:
+      sess.run(tf.initialize_all_variables())
+      checkpoint = tf.train.get_checkpoint_state("saved_networks")
+      if checkpoint and checkpoint.model_checkpoint_path:
+          saver.restore(sess, checkpoint.model_checkpoint_path)
+          print("Successfully loaded:", checkpoint.model_checkpoint_path)
+      else:
+          print("Could not find old network weights")
     else:
-        print("Could not find old network weights")
+        print("Did not restore network")
   
     i = 0
     # only train if done observing
@@ -350,19 +357,57 @@ def train_network(s, a, y, train_step, sess, data, iter):
             
     saver.save(sess, 'saved_networks/' + GAME + '-dqn', global_step=iter)
 
+def reach_terminal_state():
+  game = Game(INPUT_DIMS, GAME_PARAMS, auto_restart=False)
+  tap = np.zeros(ACTIONS)
+  tap[1] = 1
+  
+  terminal = False
+  print("Reach terminal State")
+  
+  i = 0
+  while (not terminal):
+    _,_,terminal = game.frame_step(tap)
+    i = i + 1
+    print("Trial {}: {}".format(i,terminal))
+    time.sleep(0.1)
+  game.frame_step(tap)
+
 
 if __name__ == "__main__":
     sess = tf.InteractiveSession()
     s, readout, h_fc1, train_step, a, y = create_network()
     epsilon = INITIAL_EPSILON
-    # while True:
     sess.run(tf.global_variables_initializer())
-    # data = play_game(s, readout, h_fc1, sess, epsilon=1)
-    # np.save("Test_Data", data)
-    data =  np.load("Test_Data.npy")
-    data = DataDistribution(data, GAMMA)
-    data.processInput()
-    train_network(s, a, y, train_step, sess, data, 1)
-    # # scale down epsilon
-    # if epsilon > FINAL_EPSILON:
-        # epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
+    
+    # data = play_game(s, readout, h_fc1, sess, epsilon)
+    # data = DataDistribution(data, GAMMA)
+    # data.processInput()
+    # for i in range(16):
+      # if epsilon < FINAL_EPSILON:
+          # epsilon += (FINAL_EPSILON - INITIAL_EPSILON) / EXPLORE
+    
+    # for i in range(16,50):
+      # start_time = time.time()
+      # data = play_game(s, readout, h_fc1, sess, epsilon, restore=True)
+      # reach_terminal_state()
+      # np.save("Test_Data_{}".format(i), data)
+      # play_time = time.time()
+      
+      # # data =  np.load("Test_Data.npy")
+      # data = DataDistribution(data, GAMMA)
+      # data.processInput()
+      # train_network(s, a, y, train_step, sess, data, i)
+      # # scale down epsilon
+      # if epsilon < FINAL_EPSILON:
+          # epsilon += (FINAL_EPSILON - INITIAL_EPSILON) / EXPLORE
+      # total_time = time.time()
+      # print("Loop {}:".format(i))
+      # print("Playing time took {}".format(play_time-start_time))
+      # print("Training time took {}".format(total_time-play_time))
+      
+    # data = np.load("Test_Data_1.npy")
+    # data = DataDistribution(data, GAMMA)
+    # data.processInput()
+    # train_network(s, a, y, train_step, sess, data, 4, restore=True)
+    _ = play_game(s, readout, h_fc1, sess, 0, restore=True)

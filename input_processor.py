@@ -33,8 +33,11 @@ class ScoreCalc:
             cv2.drawContours(mask, [c], -1, 0, -1)
     score_im = cv2.bitwise_and(score_im, score_im, mask=mask)
 
-    score = pytesseract.image_to_string(Image.fromarray(score_im).resize((score_width_ori*2, score_height_ori*2), Image.ANTIALIAS), config='-psm 8 digits_only')
-    print("Raw Score: {}".format(score))
+    try:
+      score = pytesseract.image_to_string(Image.fromarray(score_im).resize((score_width_ori*2, score_height_ori*2), Image.ANTIALIAS), config='-psm 8 digits_only')
+      print("Raw Score: {}".format(score))
+    except UnicodeDecodeError:
+      return -1
  
     # The score is always confirmed to be with str type
     # Try to convert into integer type, upon exception don't do anything
@@ -47,12 +50,15 @@ class ScoreCalc:
            score[i] == '}' or score[i] == 'L' or score[i] == '|' or score[i] == '!'):
       # detect a 1 here
             polished_score.append(1)
-        elif (score[i] == 'A'):
-            polished_score.append(4)
+        # elif (score[i] == 'A'):
+            # polished_score.append(4)
         elif (score[i] == 'O' or score[i] == 'o'):
             polished_score.append(0)
         else:
             polished_score.append(score[i])
+            
+    if score == '':
+        polished_score.append(0)
 
     for raw_digit in polished_score:
         try:
@@ -68,12 +74,12 @@ class ScoreCalc:
     valid = False
     # if obtaining a valid score:
     if(len(final_score) > 0):
-        if(int(''.join(map(str, final_score))) > self.current_score and int(''.join(map(str, final_score))) <= self.current_score+3):
+        if(int(''.join(map(str, final_score))) >= self.current_score and int(''.join(map(str, final_score))) <= self.current_score+3):
             self.current_score = int(''.join(map(str, final_score)))
             valid = True
     #print("raw: {}".format(int(''.join(map(str, final_score)))))
       # additional fix for starting with 1
-        if(int(''.join(map(str, final_score))) + 10 > self.current_score and int(''.join(map(str, final_score))) + 10 <= self.current_score+3):
+        if(int(''.join(map(str, final_score))) + 10 >= self.current_score and int(''.join(map(str, final_score))) + 10 <= self.current_score+3):
             self.current_score = int(''.join(map(str, final_score))) + 10
             valid = True
     print("Processed score: {}".format(self.current_score))

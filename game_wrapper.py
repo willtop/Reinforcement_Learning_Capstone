@@ -3,7 +3,7 @@ import numpy as np
 from PIL import Image, ImageGrab
 from output_processor import output_processor
 import win32gui
-
+import time
 
 class Game:
     RENDER_DISPLAY = True
@@ -13,8 +13,9 @@ class Game:
     # bounding_box = (20, 100, 380, 700)  # Jason's laptop - Emulator
     
     # Jason's Leapdroid Settings
-    corner = win32gui.GetWindowRect(win32gui.FindWindow(None,"Leapdroid"))
-    bounding_box = (corner[0]+10, corner[1]+30, corner[0]+emulator_resolution[0]+10, corner[1]+emulator_resolution[1])
+    # corner = win32gui.GetWindowRect(win32gui.FindWindow(None,"Leapdroid"))
+    corner = win32gui.GetWindowRect(win32gui.FindWindow(None,"Nox-1"))
+    bounding_box = (corner[0], corner[1]+40, corner[0]+emulator_resolution[0], corner[1]+emulator_resolution[1])
     # print("Found box: {}".format(bounding_box))
     box_width = bounding_box[2] - bounding_box[0]
     box_height = bounding_box[3] - bounding_box[1]
@@ -73,7 +74,9 @@ class Game:
 
     def restart(self):
         print('>>>>>>> RESTART')
+        time.sleep(0.1)
         output_processor.tap(self.__denormalize_screen_position(self.params.restart_tap_position))
+        time.sleep(0.2)
         output_processor.tap(self.__denormalize_screen_position(self.params.restart_tap_position))
 
     def __check_terminal_state(self, screenshot):
