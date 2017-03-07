@@ -4,23 +4,22 @@ import tensorflow as tf
 import cv2
 import sys
 sys.path.append("Wrapped Game Code/")
-# whichever is imported "as game" will be used
-import pong_fun as game
-import dummy_game
-import tetris_fun
+import dummy_game as game
+# import pong_fun as game
+# import tetris_fun as game
 import random
 import numpy as np
 from collections import deque
 
-GAME = 'pong' # the name of the game being played for log files
+GAME = 'dummy' # the name of the game being played for log files
 ACTIONS = 3 # number of valid actions
 GAMMA = 0.99 # decay rate of past observations
-OBSERVE = 50000. # timesteps to observe before training
-EXPLORE = 500000. # frames over which to anneal epsilon
-FINAL_EPSILON = 0.05 # final value of epsilon
+OBSERVE = 500. # timesteps to observe before training
+EXPLORE = 500. # frames over which to anneal epsilon
+FINAL_EPSILON = 0.0 # final value of epsilon
 INITIAL_EPSILON = 1.0 # starting value of epsilon
-REPLAY_MEMORY = 500000 # number of previous transitions to remember
-BATCH = 100 # size of minibatch
+REPLAY_MEMORY = 500 # number of previous transitions to remember
+BATCH = 64 # size of minibatch
 K = 1 # only select an action every Kth frame, repeat prev for others
 
 def weight_variable(shape):
@@ -81,7 +80,7 @@ def trainNetwork(s, readout, h_fc1, sess):
     # define the cost function
     a = tf.placeholder("float", [None, ACTIONS])
     y = tf.placeholder("float", [None])
-    readout_action = tf.reduce_sum(tf.mul(readout, a), reduction_indices = 1)
+    readout_action = tf.reduce_sum(tf.multiply(readout, a), reduction_indices = 1)
     cost = tf.reduce_mean(tf.square(y - readout_action))
     train_step = tf.train.AdamOptimizer(1e-6).minimize(cost)
 
