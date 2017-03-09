@@ -110,12 +110,12 @@ def trainNetwork(s, readout, h_fc1, sess):
     # saving and loading networks
     saver = tf.train.Saver()
     sess.run(tf.initialize_all_variables())
-    # checkpoint = tf.train.get_checkpoint_state("saved_networks")
-    # if checkpoint and checkpoint.model_checkpoint_path:
-    #     saver.restore(sess, checkpoint.model_checkpoint_path)
-    #     print("Successfully loaded:", checkpoint.model_checkpoint_path)
-    # else:
-    #     print("Could not find old network weights")
+    checkpoint = tf.train.get_checkpoint_state('checkpoints_' + GAME)
+    if checkpoint and checkpoint.model_checkpoint_path:
+        saver.restore(sess, checkpoint.model_checkpoint_path)
+        print("Successfully loaded:", checkpoint.model_checkpoint_path)
+    else:
+        print("Could not find old network weights")
 
     epsilon = INITIAL_EPSILON
     t = 0
@@ -180,13 +180,13 @@ def trainNetwork(s, readout, h_fc1, sess):
 
         # save progress every 10000 iterations
         if t % 10000 == 0:
-            saver.save(sess, 'saved_networks/' + GAME + '-dqn', global_step = t)
+            saver.save(sess, 'checkpoints_' + GAME + '/checkpoint', global_step = t)
 
         # print info
         state = ""
         if t <= OBSERVE:
             state = "observe"
-        elif t > OBSERVE and t <= OBSERVE + EXPLORE:
+        elif OBSERVE < t <= OBSERVE + EXPLORE:
             state = "explore"
         else:
             state = "train"
