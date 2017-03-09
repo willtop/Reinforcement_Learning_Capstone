@@ -17,7 +17,19 @@ Ideally the DQN learns that the best strategy is
 to continually flip the screen color to maximize reward.
 '''
 
+NAME = 'dummy'
+ACTIONS = 3
+GAMMA = 0.99
+OBSERVE = 500.
+EXPLORE = 500.
+FINAL_EPSILON = 0.0
+INITIAL_EPSILON = 1.0
+REPLAY_MEMORY = 500
+BATCH = 64
+
+
 class GameState:
+
     def __init__(self):
         self.screen = np.ones((100, 100), np.float32) * 255
         self.screen = cv2.cvtColor(self.screen, cv2.COLOR_GRAY2BGR)

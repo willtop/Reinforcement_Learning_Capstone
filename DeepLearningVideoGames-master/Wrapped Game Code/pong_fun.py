@@ -10,6 +10,17 @@ import random
 import pygame.surfarray as surfarray
 import matplotlib.pyplot as plt
 
+NAME = 'pong'
+ACTIONS = 3
+GAMMA = 0.99
+OBSERVE = 50000.
+EXPLORE = 500000.
+FINAL_EPSILON = 0.05
+INITIAL_EPSILON = 1.0
+REPLAY_MEMORY = 500000
+BATCH = 100
+
+
 position = 5, 325
 os.environ['SDL_VIDEO_WINDOW_POS'] = str(position[0]) + "," + str(position[1])
 pygame.init()
