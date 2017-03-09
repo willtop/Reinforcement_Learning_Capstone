@@ -4,8 +4,8 @@ import tensorflow as tf
 import cv2
 import sys
 sys.path.append("Wrapped Game Code/")
-# import dummy_game as game
-import pong_fun as game
+import dummy_game as game
+# import pong_fun as game
 import random
 import numpy as np
 from collections import deque
@@ -19,7 +19,6 @@ FINAL_EPSILON = game.FINAL_EPSILON  # final value of epsilon
 INITIAL_EPSILON = game.INITIAL_EPSILON  # starting value of epsilon
 REPLAY_MEMORY = game.REPLAY_MEMORY  # number of previous transitions to remember
 BATCH = game.BATCH  # size of minibatch
-FRAMES_PER_ACTION = 1  # only select an action every Kth frame, repeat prev for others
 
 
 def weight_variable(shape):
@@ -135,18 +134,17 @@ def trainNetwork(s, readout, h_fc1, sess):
         if epsilon > FINAL_EPSILON and t > OBSERVE:
             epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
 
-        for i in range(0, FRAMES_PER_ACTION):
-            # run the selected action and observe next state and reward
-            x_t1_col, r_t, terminal = game_state.frame_step(a_t)
-            x_t1 = cv2.cvtColor(cv2.resize(x_t1_col, (80, 80)), cv2.COLOR_BGR2GRAY)
-            ret, x_t1 = cv2.threshold(x_t1,1,255,cv2.THRESH_BINARY)
-            x_t1 = np.reshape(x_t1, (80, 80, 1))
-            s_t1 = np.append(x_t1, s_t[:,:,0:3], axis = 2)
+        # run the selected action and observe next state and reward
+        x_t1_col, r_t, terminal = game_state.frame_step(a_t)
+        x_t1 = cv2.cvtColor(cv2.resize(x_t1_col, (80, 80)), cv2.COLOR_BGR2GRAY)
+        ret, x_t1 = cv2.threshold(x_t1,1,255,cv2.THRESH_BINARY)
+        x_t1 = np.reshape(x_t1, (80, 80, 1))
+        s_t1 = np.append(x_t1, s_t[:,:,0:3], axis = 2)
 
-            # store the transition in D
-            D.append((s_t, a_t, r_t, s_t1, terminal))
-            if len(D) > REPLAY_MEMORY:
-                D.popleft()
+        # store the transition in D
+        D.append((s_t, a_t, r_t, s_t1, terminal))
+        if len(D) > REPLAY_MEMORY:
+            D.popleft()
 
         # only train if done observing
         if t > OBSERVE:
@@ -190,7 +188,7 @@ def trainNetwork(s, readout, h_fc1, sess):
             state = "explore"
         else:
             state = "train"
-        print("TIMESTEP", t, "/ STATE", state, "/ EPSILON", epsilon, "/ ACTION", action_index, "/ REWARD", r_t, "/ Q_MAX %e" % np.max(readout_t))
+        print("TIMESTEP", t, "/ STATE", state, "/ EPSILON", epsilon, "/ ACTION", action_index, "/ REWARD", r_t, "/ Q_MAX %e" % np.max(readout_t), "/ TERMINAL", terminal)
 
         # write info to files
         '''
