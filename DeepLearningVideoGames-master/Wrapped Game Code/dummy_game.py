@@ -20,11 +20,11 @@ to continually flip the screen color to maximize reward.
 NAME = 'dummy'
 ACTIONS = 3
 GAMMA = 0.99
-OBSERVE = 500.
-EXPLORE = 500.
+OBSERVE = 200.
+EXPLORE = 200.
 FINAL_EPSILON = 0.0
 INITIAL_EPSILON = 1.0
-REPLAY_MEMORY = 500
+REPLAY_MEMORY = 200
 BATCH = 64
 
 
