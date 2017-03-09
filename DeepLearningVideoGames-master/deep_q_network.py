@@ -3,9 +3,10 @@
 import tensorflow as tf
 import cv2
 import sys
+import time
 sys.path.append("Wrapped Game Code/")
-import dummy_game as game
-# import pong_fun as game
+# import dummy_game as game
+import pong_fun as game
 import random
 import numpy as np
 from collections import deque
@@ -22,6 +23,7 @@ BATCH = game.BATCH  # size of minibatch
 
 CHECKPOINTS_DIR = 'checkpoints_' + GAME + '/'
 REPLAY_MEMORY_FILE = 'replay_memory.npz'
+
 
 def weight_variable(shape):
     initial = tf.truncated_normal(shape, stddev = 0.01)
@@ -134,6 +136,7 @@ def trainNetwork(s, readout, h_fc1, sess):
             epsilon = 0 if epsilon < 0 else epsilon
 
         # choose an action epsilon greedily
+        readout_time = time.time()
         readout_t = readout.eval(feed_dict = {s : [s_t]})[0]
         a_t = np.zeros([ACTIONS])
         action_index = 0
@@ -143,13 +146,16 @@ def trainNetwork(s, readout, h_fc1, sess):
         else:
             action_index = np.argmax(readout_t)
             a_t[action_index] = 1
+        readout_time = time.time() - readout_time
 
         # run the selected action and observe next state and reward
+        frame_time = time.time()
         x_t1_col, r_t, terminal = game_state.frame_step(a_t)
         x_t1 = cv2.cvtColor(cv2.resize(x_t1_col, (80, 80)), cv2.COLOR_BGR2GRAY)
         ret, x_t1 = cv2.threshold(x_t1,1,255,cv2.THRESH_BINARY)
         x_t1 = np.reshape(x_t1, (80, 80, 1))
         s_t1 = np.append(x_t1, s_t[:,:,0:3], axis = 2)
+        frame_time = time.time() - frame_time
 
         # store the transition in D
         D.append((s_t, a_t, r_t, s_t1, terminal))
@@ -177,10 +183,12 @@ def trainNetwork(s, readout, h_fc1, sess):
                     y_batch.append(r_batch[i] + GAMMA * np.max(readout_j1_batch[i]))
 
             # perform gradient step
+            batch_time = time.time()
             train_step.run(feed_dict = {
                 y : y_batch,
                 a : a_batch,
                 s : s_j_batch})
+            batch_time = time.time() - batch_time
 
         # save progress every 10000 iterations
         if t % 10000 == 0:
@@ -195,7 +203,13 @@ def trainNetwork(s, readout, h_fc1, sess):
             state = "explore"
         else:
             state = "train"
-        print("TIMESTEP", t, "/ STATE", state, "/ EPSILON", epsilon, "/ ACTION", action_index, "/ REWARD", r_t, "/ Q_MAX %e" % np.max(readout_t), "/ TERMINAL", terminal)
+
+        if t % 100 == 0:
+            print("TIMESTEP", t, "/ STATE", state, "/ EPSILON", epsilon, "/ ACTION", action_index, "/ REWARD", r_t,
+                  "/ Q_MAX %e" % np.max(readout_t), "/ TERMINAL", terminal,
+                  "/ READOUT_TIME", "{0:.4f}".format(readout_time),
+                  "/ FRAME_TIME", "{0:.4f}".format(frame_time),
+                  "/ BATCH_TIME", "{0:.4f}".format(batch_time))
 
         # write info to files
         '''

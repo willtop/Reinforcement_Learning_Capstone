@@ -1,14 +1,10 @@
 #!/usr/bin/env python
 #Modified from http://www.pygame.org/project-Very+simple+Pong+game-816-.html
 
-import numpy
 import pygame
 import os
 from pygame.locals import *
-from sys import exit
-import random
-import pygame.surfarray as surfarray
-import matplotlib.pyplot as plt
+import sys
 
 NAME = 'pong'
 ACTIONS = 3
@@ -20,6 +16,9 @@ INITIAL_EPSILON = 1.0
 REPLAY_MEMORY = 500000
 BATCH = 100
 
+if len(sys.argv) == 2 and sys.argv[1] == '--headless':
+    os.environ['SDL_VIDEODRIVER'] = 'dummy'
+    print('Running in headless mode')
 
 position = 5, 325
 os.environ['SDL_VIDEO_WINDOW_POS'] = str(position[0]) + "," + str(position[1])
