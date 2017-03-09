@@ -20,6 +20,8 @@ INITIAL_EPSILON = game.INITIAL_EPSILON  # starting value of epsilon
 REPLAY_MEMORY = game.REPLAY_MEMORY  # number of previous transitions to remember
 BATCH = game.BATCH  # size of minibatch
 
+CHECKPOINTS_DIR = 'checkpoints_' + GAME + '/'
+REPLAY_MEMORY_FILE = 'replay_memory.npz'
 
 def weight_variable(shape):
     initial = tf.truncated_normal(shape, stddev = 0.01)
@@ -108,17 +110,29 @@ def trainNetwork(s, readout, h_fc1, sess):
 
     # saving and loading networks
     saver = tf.train.Saver()
-    sess.run(tf.initialize_all_variables())
+    sess.run(tf.global_variables_initializer())
+
+    t = 0
+
     checkpoint = tf.train.get_checkpoint_state('checkpoints_' + GAME)
     if checkpoint and checkpoint.model_checkpoint_path:
         saver.restore(sess, checkpoint.model_checkpoint_path)
+        D = deque(np.load(CHECKPOINTS_DIR + REPLAY_MEMORY_FILE)['D'].tolist())
+        t = int(checkpoint.model_checkpoint_path.split('-')[-1])
         print("Successfully loaded:", checkpoint.model_checkpoint_path)
     else:
         print("Could not find old network weights")
 
-    epsilon = INITIAL_EPSILON
-    t = 0
     while "pigs" != "fly":
+
+        # scale down epsilon
+        if t < OBSERVE:
+            epsilon = INITIAL_EPSILON
+        else:
+            epsilon_delta_per_step = (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
+            epsilon = INITIAL_EPSILON - epsilon_delta_per_step * (t - OBSERVE)
+            epsilon = 0 if epsilon < 0 else epsilon
+
         # choose an action epsilon greedily
         readout_t = readout.eval(feed_dict = {s : [s_t]})[0]
         a_t = np.zeros([ACTIONS])
@@ -129,10 +143,6 @@ def trainNetwork(s, readout, h_fc1, sess):
         else:
             action_index = np.argmax(readout_t)
             a_t[action_index] = 1
-
-        # scale down epsilon
-        if epsilon > FINAL_EPSILON and t > OBSERVE:
-            epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
 
         # run the selected action and observe next state and reward
         x_t1_col, r_t, terminal = game_state.frame_step(a_t)
@@ -172,13 +182,10 @@ def trainNetwork(s, readout, h_fc1, sess):
                 a : a_batch,
                 s : s_j_batch})
 
-        # update the old values
-        s_t = s_t1
-        t += 1
-
         # save progress every 10000 iterations
         if t % 10000 == 0:
-            saver.save(sess, 'checkpoints_' + GAME + '/checkpoint', global_step = t)
+            saver.save(sess, CHECKPOINTS_DIR + 'checkpoint', global_step=t)
+            np.savez(CHECKPOINTS_DIR + REPLAY_MEMORY_FILE, D=np.asarray(D))
 
         # print info
         state = ""
@@ -198,6 +205,9 @@ def trainNetwork(s, readout, h_fc1, sess):
             cv2.imwrite("logs_tetris/frame" + str(t) + ".png", x_t1)
         '''
 
+        # update the old values
+        s_t = s_t1
+        t += 1
 
 def playGame():
     sess = tf.InteractiveSession()
