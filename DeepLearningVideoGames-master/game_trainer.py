@@ -1,15 +1,14 @@
-#!/usr/bin/env python
-
 import tensorflow as tf
 import cv2
 import sys
 import time
-sys.path.append("Wrapped Game Code/")
-# import dummy_game as game
-import pong_fun as game
 import random
 import numpy as np
 from collections import deque
+import dqn as dqn
+sys.path.append("Wrapped Game Code/")
+import dummy_game as game
+# import pong_fun as game
 
 GAME = game.NAME  # the name of the game being played for log files
 ACTIONS = game.ACTIONS  # number of valid actions
@@ -22,73 +21,13 @@ REPLAY_MEMORY = game.REPLAY_MEMORY  # number of previous transitions to remember
 BATCH = game.BATCH  # size of minibatch
 
 CHECKPOINTS_DIR = 'checkpoints_' + GAME + '/'
-REPLAY_MEMORY_FILE = 'replay_memory.npz'
 
 
-def weight_variable(shape):
-    initial = tf.truncated_normal(shape, stddev = 0.01)
-    return tf.Variable(initial)
-
-
-def bias_variable(shape):
-    initial = tf.constant(0.01, shape = shape)
-    return tf.Variable(initial)
-
-
-def conv2d(x, W, stride):
-    return tf.nn.conv2d(x, W, strides = [1, stride, stride, 1], padding = "SAME")
-
-
-def max_pool_2x2(x):
-    return tf.nn.max_pool(x, ksize = [1, 2, 2, 1], strides = [1, 2, 2, 1], padding = "SAME")
-
-
-def createNetwork():
-    # network weights
-    W_conv1 = weight_variable([8, 8, 4, 32])
-    b_conv1 = bias_variable([32])
-
-    W_conv2 = weight_variable([4, 4, 32, 64])
-    b_conv2 = bias_variable([64])
-
-    W_conv3 = weight_variable([3, 3, 64, 64])
-    b_conv3 = bias_variable([64])
-    
-    W_fc1 = weight_variable([1600, 512])
-    b_fc1 = bias_variable([512])
-
-    W_fc2 = weight_variable([512, ACTIONS])
-    b_fc2 = bias_variable([ACTIONS])
-
-    # input layer
-    s = tf.placeholder("float", [None, 80, 80, 4])
-
-    # hidden layers
-    h_conv1 = tf.nn.relu(conv2d(s, W_conv1, 4) + b_conv1)
-    h_pool1 = max_pool_2x2(h_conv1)
-
-    h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2, 2) + b_conv2)
-    #h_pool2 = max_pool_2x2(h_conv2)
-
-    h_conv3 = tf.nn.relu(conv2d(h_conv2, W_conv3, 1) + b_conv3)
-    #h_pool3 = max_pool_2x2(h_conv3)
-
-    #h_pool3_flat = tf.reshape(h_pool3, [-1, 256])
-    h_conv3_flat = tf.reshape(h_conv3, [-1, 1600])
-
-    h_fc1 = tf.nn.relu(tf.matmul(h_conv3_flat, W_fc1) + b_fc1)
-
-    # readout layer
-    readout = tf.matmul(h_fc1, W_fc2) + b_fc2
-
-    return s, readout, h_fc1
-
-
-def trainNetwork(s, readout, h_fc1, sess):
+def train(s, readout, h_fc1, sess):
     # define the cost function
     a = tf.placeholder("float", [None, ACTIONS])
     y = tf.placeholder("float", [None])
-    readout_action = tf.reduce_sum(tf.multiply(readout, a), reduction_indices = 1)
+    readout_action = tf.reduce_sum(tf.multiply(readout, a), reduction_indices=1)
     cost = tf.reduce_mean(tf.square(y - readout_action))
     train_step = tf.train.AdamOptimizer(1e-6).minimize(cost)
 
@@ -119,7 +58,6 @@ def trainNetwork(s, readout, h_fc1, sess):
     checkpoint = tf.train.get_checkpoint_state('checkpoints_' + GAME)
     if checkpoint and checkpoint.model_checkpoint_path:
         saver.restore(sess, checkpoint.model_checkpoint_path)
-        D = deque(np.load(CHECKPOINTS_DIR + REPLAY_MEMORY_FILE)['D'].tolist())
         t = int(checkpoint.model_checkpoint_path.split('-')[-1])
         print("Successfully loaded:", checkpoint.model_checkpoint_path)
     else:
@@ -163,6 +101,7 @@ def trainNetwork(s, readout, h_fc1, sess):
             D.popleft()
 
         # only train if done observing
+        batch_time = time.time()
         if t > OBSERVE:
             # sample a minibatch to train on
             minibatch = random.sample(D, BATCH)
@@ -183,17 +122,15 @@ def trainNetwork(s, readout, h_fc1, sess):
                     y_batch.append(r_batch[i] + GAMMA * np.max(readout_j1_batch[i]))
 
             # perform gradient step
-            batch_time = time.time()
             train_step.run(feed_dict = {
                 y : y_batch,
                 a : a_batch,
                 s : s_j_batch})
-            batch_time = time.time() - batch_time
+        batch_time = time.time() - batch_time
 
         # save progress every 10000 iterations
         if t % 10000 == 0:
             saver.save(sess, CHECKPOINTS_DIR + 'checkpoint', global_step=t)
-            np.savez(CHECKPOINTS_DIR + REPLAY_MEMORY_FILE, D=np.asarray(D))
 
         # print info
         state = ""
@@ -223,14 +160,8 @@ def trainNetwork(s, readout, h_fc1, sess):
         s_t = s_t1
         t += 1
 
-def playGame():
+
+if __name__ == '__main__':
     sess = tf.InteractiveSession()
-    s, readout, h_fc1 = createNetwork()
-    trainNetwork(s, readout, h_fc1, sess)
-
-
-def main():
-    playGame()
-
-if __name__ == "__main__":
-    main()
+    s, readout, h_fc1 = dqn.create_network(ACTIONS)
+    train(s, readout, h_fc1, sess)
