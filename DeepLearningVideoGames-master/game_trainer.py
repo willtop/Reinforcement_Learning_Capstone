@@ -5,9 +5,10 @@ import time
 import random
 import numpy as np
 import dqn as dqn
-sys.path.append("Wrapped Game Code/")
+sys.path.append("wrapped_game_code/")
 # import dummy_game as game
-import pong_fun as game
+# import pong_fun as game
+import android_game as game
 
 GAME = game.NAME  # the name of the game being played for log files
 ACTIONS = game.ACTIONS  # number of valid actions
@@ -19,10 +20,10 @@ INITIAL_EPSILON = game.INITIAL_EPSILON  # starting value of epsilon
 REPLAY_MEMORY = game.REPLAY_MEMORY  # number of previous transitions to remember
 REPLAY_MEMORY_DISCARD_AMOUNT = game.REPLAY_MEMORY_DISCARD_AMOUNT  # number of previous transitions to discard when replay memory is full
 BATCH = game.BATCH  # size of minibatch
-LEARNING_RATE = 1e-5
 
+LEARNING_RATE = 1e-5
+PLAY_TO_WIN = False
 CHECKPOINTS_DIR = 'checkpoints_' + GAME + '/'
-PLAY_TO_WIN = True
 
 
 def train(s, readout, h_fc1, sess):
@@ -40,8 +41,8 @@ def train(s, readout, h_fc1, sess):
     D = []
 
     # printing
-    a_file = open("logs_" + GAME + "/readout.txt", 'w')
-    h_file = open("logs_" + GAME + "/hidden.txt", 'w')
+    # a_file = open("logs_" + GAME + "/readout.txt", 'w')
+    # h_file = open("logs_" + GAME + "/hidden.txt", 'w')
 
     # get the first state by doing nothing and preprocess the image to 80x80x4
     do_nothing = np.zeros(ACTIONS)
