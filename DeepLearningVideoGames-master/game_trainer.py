@@ -139,7 +139,7 @@ def train(s, readout, h_fc1, sess):
                         minibatch.clear()
 
                 # empty out a portion of the replay memory
-                D = D[REPLAY_MEMORY_DISCARD_AMOUNT]
+                D = D[REPLAY_MEMORY_DISCARD_AMOUNT:]
         train_time = time.time() - train_time
 
         # save progress every 10000 iterations
