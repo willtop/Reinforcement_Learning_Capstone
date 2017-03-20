@@ -25,6 +25,7 @@ class GameState:
     emulator_resolution = (240, 400)
     bounding_box = (1, 71, 121, 271)  # Daniel Laptop
     # bounding_box = (20, 100, 380, 700)  # Jason's laptop - Emulator
+    # bounding_box = (0, 0, 350, 600) # William Lapton
 
     box_width = bounding_box[2] - bounding_box[0]
     box_height = bounding_box[3] - bounding_box[1]
