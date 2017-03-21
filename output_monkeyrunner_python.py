@@ -20,5 +20,6 @@ if __name__ == '__main__':
     print('Sent tap at:')
     print(time.time())
     monkey.tap((200, 100))
-    while 1:
-        pass
+    monkey.tap((540, 960))
+    # while 1:
+        # pass

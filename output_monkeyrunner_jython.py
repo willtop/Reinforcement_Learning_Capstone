@@ -6,7 +6,7 @@ import time
 import socket
 from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
 
-DEBUG = False
+DEBUG = True
 DATA_END = '|'
 
 print('Connecting to MonkeyRunner...')

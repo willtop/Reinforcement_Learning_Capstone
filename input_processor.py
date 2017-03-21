@@ -35,7 +35,7 @@ class ScoreCalc:
 
     try:
       score = pytesseract.image_to_string(Image.fromarray(score_im).resize((score_width_ori*2, score_height_ori*2), Image.ANTIALIAS), config='-psm 8 digits_only')
-      print("Raw Score: {}".format(score))
+      # print("Raw Score: {}".format(score))
     except UnicodeDecodeError:
       return -1
  
@@ -82,7 +82,7 @@ class ScoreCalc:
         if(int(''.join(map(str, final_score))) + 10 >= self.current_score and int(''.join(map(str, final_score))) + 10 <= self.current_score+3):
             self.current_score = int(''.join(map(str, final_score))) + 10
             valid = True
-    print("Processed score: {}".format(self.current_score))
+    # print("Processed score: {}".format(self.current_score))
 
     if valid:
       return self.current_score

@@ -2,6 +2,13 @@ import numpy as np
 import tensorflow as tf
 from input_processor import ScoreCalc
 
+#SCORES
+positive_reward = 0.2
+positive_do_nothing_reward = 0
+negative_reward = -1
+negative_opposite_action_reward = -1
+
+
 class DataDistribution:
   def __init__(self, dataset, discountFactor):
     self.dataset = dataset
@@ -32,6 +39,7 @@ class DataDistribution:
 
     
   def processInput(self):
+    print("pre-processing")
     ScoreCalculator = ScoreCalc()
     
     data = np.array(self.dataset)
@@ -40,6 +48,11 @@ class DataDistribution:
     self.reward = []
     toDelete = []
     toAppend = []
+    actionAppend = []
+    do_nothing = np.zeros(2)
+    do_nothing[0] = 1
+    tap = np.zeros(2)
+    tap[1] = 1
     
     score = 0
     
@@ -49,15 +62,22 @@ class DataDistribution:
     
     for i,d in enumerate(data):
       # No Q value for last data point
-      print("Loop {}".format(i))
+      # print("Loop {}".format(i))
       if i == len(data)-1:
         toDelete.append(i)
         break
         
       # If we died, negative reward for both actions
       if d[5]:
-        self.reward.append(-1)
+        self.reward.append(negative_reward)
         toAppend.append(d[0])
+        if d[1][0] == 1:
+          actionAppend.append(tap)
+        elif d[1][1] == 1:
+          actionAppend.append(do_nothing)
+        else:
+          print("ERROR: action was not tap nor do_nothing")
+          exit()
         ScoreCalculator.resertScore()
         score = 0
         continue
@@ -66,15 +86,15 @@ class DataDistribution:
       #if score calculator failed, delete data point
       if new_score == -1:
         toDelete.append(i)
-        print("Delete score")
+        # print("Delete score")
         continue
       #if score increased, then we succeeded
       elif new_score > score:
-        reward = 1 + self.discount*data[i+1][4]
+        reward = positive_reward + self.discount*data[i+1][4]
         score = new_score
       #we did nothing this time
       else:
-        reward = 0.5 + self.discount*data[i+1][4]
+        reward = positive_do_nothing_reward + self.discount*data[i+1][4]
       self.reward.append(reward)
       
     self.state = np.delete(self.state, toDelete)      
@@ -86,16 +106,16 @@ class DataDistribution:
     self.action = np.stack(self.action)
     self.reward = np.stack(self.reward)
     
-    toAppend = np.array(toAppend)
-    actionAppend = np.zeros((len(toAppend),2))
-    actionAppend[:,0] = 1
-    rewardAppend = np.ones((len(toAppend)))*-0.5
-    # print(rewardAppend)
-    # print(self.reward)
-   
-    self.state = np.vstack((self.state, toAppend))
-    self.action = np.vstack((self.action, actionAppend))
-    self.reward = np.concatenate((self.reward, rewardAppend))
+    if negative_opposite_action_reward != 0:
+      toAppend = np.array(toAppend)
+      actionAppend = np.array(actionAppend)
+      rewardAppend = np.ones((len(toAppend)))*negative_opposite_action_reward
+      # print(rewardAppend)
+      # print(self.reward)
+     
+      self.state = np.vstack((self.state, toAppend))
+      self.action = np.vstack((self.action, actionAppend))
+      self.reward = np.concatenate((self.reward, rewardAppend))
         
     assert self.state.shape[0] == self.reward.shape[0], (
           'state.shape: %s reward.shape: %s' % (self.state.shape, self.reward.shape))
@@ -116,6 +136,9 @@ class DataDistribution:
     print(self.state.shape)
     print(self.action.shape)
     print(self.reward.shape)
+    
+    print("pre-processing done")
+
     
     # assert self.action[0].shape == (2)
     # stateshape = self.state[0].shape

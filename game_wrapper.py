@@ -6,15 +6,16 @@ import win32gui
 import time
 
 class Game:
-    RENDER_DISPLAY = True
+    RENDER_DISPLAY = False
     emulator_resolution = (480, 800)
     # corner = (0,0)
     # bounding_box = (0, 70, 292, 560)  # Daniel Laptop
     # bounding_box = (20, 100, 380, 700)  # Jason's laptop - Emulator
     
     # Jason's Leapdroid Settings
-    # corner = win32gui.GetWindowRect(win32gui.FindWindow(None,"Leapdroid"))
-    corner = win32gui.GetWindowRect(win32gui.FindWindow(None,"Nox-1"))
+    corner = win32gui.GetWindowRect(win32gui.FindWindow(None,"Leapdroid"))
+    # corner = win32gui.GetWindowRect(win32gui.FindWindow(None,"Nox-1"))
+    # corner = (0,0)
     bounding_box = (corner[0], corner[1]+40, corner[0]+emulator_resolution[0], corner[1]+emulator_resolution[1])
     # print("Found box: {}".format(bounding_box))
     box_width = bounding_box[2] - bounding_box[0]
@@ -23,7 +24,7 @@ class Game:
     #Terminal state check pixel colour tolerance
     tolerance = 5
 
-    def __init__(self, screenshot_dims, params, auto_restart=True):
+    def __init__(self, screenshot_dims, params, auto_restart=False):
         self.screenshot_dims = screenshot_dims
         self.params = params
         self.auto_restart = auto_restart
@@ -72,12 +73,43 @@ class Game:
 
         return screenshot, score_im, terminal
 
-    def restart(self):
+    def restart(self, play=True):
         print('>>>>>>> RESTART')
-        time.sleep(0.1)
-        output_processor.tap(self.__denormalize_screen_position(self.params.restart_tap_position))
-        time.sleep(0.2)
-        output_processor.tap(self.__denormalize_screen_position(self.params.restart_tap_position))
+        tap = np.zeros(2)
+        tap[1] = 1
+        do_nothing = np.zeros(2)
+        do_nothing[0] = 1
+        time.sleep(0.5)
+        _,_,terminal = self.frame_step(do_nothing)
+        while terminal:
+          time.sleep(0.3)
+          _,_,terminal = self.frame_step(tap)
+        if play:
+          print("TAP")
+          time.sleep(0.7)
+          self.frame_step(tap)
+        # time.sleep(0.15)
+        # output_processor.tap(self.__denormalize_screen_position(self.params.restart_tap_position))
+        # time.sleep(0.3)
+        # output_processor.tap(self.__denormalize_screen_position(self.params.restart_tap_position))
+       
+        
+    def reach_terminal_state(self):
+      do_nothing = np.zeros(2)
+      do_nothing[0] = 1
+      tap = np.zeros(2)
+      tap[1] = 1
+      
+      print("Reach terminal State")
+      time.sleep(1)
+      _,_,terminal = self.frame_step(do_nothing)
+      
+      while (not terminal):
+        time.sleep(0.5)
+        _,_,terminal = self.frame_step(tap)
+        
+      # input()
+      # self.restart(play=False)
 
     def __check_terminal_state(self, screenshot):
         check = True
