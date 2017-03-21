@@ -25,6 +25,8 @@ LEARNING_RATE = 1e-5
 PLAY_TO_WIN = False
 CHECKPOINTS_DIR = 'checkpoints_' + GAME + '/'
 
+IDLE_RATE = 1.2 # factor boosting up the probability for agent selecting an idle action during exploration stage
+
 
 def train(s, readout, h_fc1, sess):
     # define the cost function
@@ -85,7 +87,8 @@ def train(s, readout, h_fc1, sess):
         a_t = np.zeros([ACTIONS])
         action_index = 0
         if random.random() <= epsilon or t <= OBSERVE:
-            action_index = random.randrange(ACTIONS)
+            rand_number = random.random()
+            action_index = 0 if (rand_number <= 1/ACTIONS*IDLE_RATE) else 1
             a_t[action_index] = 1
         else:
             action_index = np.argmax(readout_t)
