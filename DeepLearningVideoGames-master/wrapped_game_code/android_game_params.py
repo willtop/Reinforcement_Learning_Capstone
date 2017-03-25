@@ -31,4 +31,9 @@ boom_dots_params = GameParams(
     [[0.2, 0.2]],
     [[0, 255, 0]])
 
-    
+zigzag_params = GameParams(
+    'zigzag',
+    [0.5, 0.5],
+    [0.7, 0.55],
+    [[0.7, 0.55]],
+    [[225, 225, 225]])
