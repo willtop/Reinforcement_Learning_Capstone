@@ -108,8 +108,8 @@ class Game:
       _,_,terminal = self.frame_step(do_nothing)
       
       while (not terminal):
-        time.sleep(1.5)
         _,_,terminal = self.frame_step(tap)
+        time.sleep(2.0) # make sure it's really picking up terminated
         _,_,terminal = self.frame_step(do_nothing)
         _,_,terminal = self.frame_step(do_nothing)
         _,_,terminal = self.frame_step(do_nothing)

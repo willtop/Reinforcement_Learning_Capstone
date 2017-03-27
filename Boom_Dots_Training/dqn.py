@@ -26,12 +26,12 @@ INPUT_DIMS = (60, 100) # Dimension for input image to CNN
 NUM_FRAMES = 4 # Number of frames in each training data point
 GAMMA = 0.90  # decay rate of past observations
 # OBSERVE = 500.  # timesteps to observe before training
-INITIAL_EXPLORE_PROB = 1
-FINAL_EXPLORE_PROB = 0
+INITIAL_EXPLORE_PROB = 0.0
+FINAL_EXPLORE_PROB = 0.0
 EXPLORE_PROB_DECAY = 10 # amount of total timesteps to redunce the probability of exploration
 TAB_PROB = 0.7 # assign 70% chance to explore tapping
 # a value of 0 corresponds to random decision
-REPLAY_MEMORY = 20  # number of previous transitions to remember
+REPLAY_MEMORY = 50  # number of previous transitions to remember
 # Total size of training data
 TRAINING_ITER = 5 #Number of training iterations over the training data
 BATCH = 5  # size of minibatch. Should be divisible by REPLAY_MEMORY
@@ -167,6 +167,7 @@ def play_game(s, readout, h_fc1, sess, explore_prob, restore = False):
         # preparing the next action
         a_t = np.zeros([ACTIONS])
         if random.random() < explore_prob:
+            print("[Exploration]")
             # [Exploration]
             action_index = 1 if (random.random() < TAB_PROB) else 0
             a_t[action_index] = 1
@@ -232,9 +233,10 @@ def play_game(s, readout, h_fc1, sess, explore_prob, restore = False):
     # Store Data into a DataDistribution class and return
     print("Finished {} transactions, forcing game to stop...".format(REPLAY_MEMORY))
     game.reach_terminal_state()
+    print("Game stopped! Returning from playing stage.")
     return D
     
-def train_network(s, a, y, train_step, sess, data, iter, restore=False):
+def train_network(s, a, y, train_step, sess, data, iter, restore=True):
     '''
     Trains the network given the data saved from playing the game.
     '''
@@ -303,7 +305,7 @@ if __name__ == "__main__":
     for i in range(start,50):
       start_time = time.time()
       # play game gets the 2k training points
-      data = play_game(s, readout, h_fc1, sess, explore_prob, restore=False)
+      data = play_game(s, readout, h_fc1, sess, explore_prob, restore=True)
       print("Finished playing and storing transaction set {}. Saving the raw transactions...".format(i))
       np.save("Transactions/Transaction_set_{}".format(i), data)
       play_time = time.time()
@@ -315,7 +317,7 @@ if __name__ == "__main__":
       train_network(s, a, y, train_step, sess, data, i)
       # scale down epsilon
       if explore_prob > 0:
-          epsilon -= (INITIAL_EXPLORE_PROB - FINAL_EXPLORE_PROB) / EXPLORE_PROB_DECAY # won't get to negative
+          explore_prob -= (INITIAL_EXPLORE_PROB - FINAL_EXPLORE_PROB) / EXPLORE_PROB_DECAY # won't get to negative
       total_time = time.time()
       print("Loop {}:".format(i))
       print("Playing time took {}".format(play_time-start_time))
