@@ -85,12 +85,12 @@ class Game:
         time.sleep(0.5)
         _,_,terminal = self.frame_step(do_nothing)
         while terminal:
-          time.sleep(0.3)
-          _,_,terminal = self.frame_step(tap)
-        if play:
-          #print("TAP")
-          time.sleep(0.7)
-          self.frame_step(tap)
+            _,_,terminal = self.frame_step(tap)
+            time.sleep(0.5)
+        # if play:
+        #   #print("TAP")
+        #   time.sleep(0.7)
+        #   self.frame_step(tap)
         # time.sleep(0.15)
         # output_processor.tap(self.__denormalize_screen_position(self.params.restart_tap_position))
         # time.sleep(0.3)

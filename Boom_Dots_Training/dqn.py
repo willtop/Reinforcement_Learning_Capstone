@@ -26,9 +26,10 @@ INPUT_DIMS = (60, 100) # Dimension for input image to CNN
 NUM_FRAMES = 4 # Number of frames in each training data point
 GAMMA = 0.90  # decay rate of past observations
 # OBSERVE = 500.  # timesteps to observe before training
-EXPLORE = 40  # iterations over which to anneal epsilon
-FINAL_EPSILON = 1  # final value of epsilon
-INITIAL_EPSILON = 0  # starting value of epsilon
+INITIAL_EXPLORE_PROB = 1
+FINAL_EXPLORE_PROB = 0
+EXPLORE_PROB_DECAY = 10 # amount of total timesteps to redunce the probability of exploration
+TAB_PROB = 0.7 # assign 70% chance to explore tapping
 # a value of 0 corresponds to random decision
 REPLAY_MEMORY = 20  # number of previous transitions to remember
 # Total size of training data
@@ -110,7 +111,7 @@ def create_network():
 
     return s, readout, h_fc1, train_step, a, y
 
-def play_game(s, readout, h_fc1, sess, epsilon, restore = False):
+def play_game(s, readout, h_fc1, sess, explore_prob, restore = False):
     '''
     Plays the game and saves the training data to a python collections.
     It will fill up to REPLAY_MEMORY training points where each training
@@ -160,27 +161,20 @@ def play_game(s, readout, h_fc1, sess, epsilon, restore = False):
     # start preparing 2000 transactions
     t = 0
     while t < REPLAY_MEMORY:
-        # choose an action epsilon greedily
+        # always need to compute the below quantities for storing transactions
         readout_t = readout.eval(feed_dict={s: [s_t]})[0]
-        a_t = np.zeros([ACTIONS])
         Q_max_last = np.max(readout_t)
-        # Choose action greedily
-        if epsilon == -1:
-            a_t_i = np.argmax(readout_t)
-            a_t[a_t_i] = 1
-            action_index = a_t_i
+        # preparing the next action
+        a_t = np.zeros([ACTIONS])
+        if random.random() < explore_prob:
+            # [Exploration]
+            action_index = 1 if (random.random() < TAB_PROB) else 0
+            a_t[action_index] = 1
         else:
-            # compute softmax
-            tap_unnorm = np.exp(epsilon*readout_t[1])
-            norm = np.sum(np.exp(epsilon*readout_t))
-            Prob_Tap = tap_unnorm/norm
-            decision = random.random()
-            if decision <= Prob_Tap:
-                a_t[1] = 1
-                action_index = 1
-            else:
-                a_t[0] = 1
-                action_index = 0
+            # [Exploitation] Choose action greedily
+            action_index = np.argmax(readout_t)
+            a_t[action_index] = 1
+        
             
         # Apply action and get 1 next frame
         print("Initiate transaction: {} with action {}".format(t, action_index))
@@ -232,8 +226,7 @@ def play_game(s, readout, h_fc1, sess, epsilon, restore = False):
         time.sleep(1)
         # update the transaction number at the end    
         t += 1    
-        # start the game for next iteration
-        game.frame_step(tap)
+
         
         
     # Store Data into a DataDistribution class and return
@@ -278,7 +271,7 @@ def restore_network():
 if __name__ == "__main__":
     sess = tf.InteractiveSession()
     s, readout, h_fc1, train_step, a, y = create_network()
-    epsilon = INITIAL_EPSILON
+    explore_prob = INITIAL_EXPLORE_PROB
     sess.run(tf.global_variables_initializer())
         
     ### TRAINING SECTION ###
@@ -289,14 +282,15 @@ if __name__ == "__main__":
     # start = 0 if there is not previous training data
     start = 0
     
+    # recover the explore_prob to the current training stage corresponding value
     for i in range(start):
       ## Run the below commented code if you want to retrain the model with the save play data
       # data =  np.load("Test_Data_{}.npy".format(i))
       # data = DataDistribution(data, GAMMA)
       # data.processInput()
       # train_network(s, a, y, train_step, sess, data, i)
-      if epsilon < FINAL_EPSILON:
-          epsilon += (FINAL_EPSILON - INITIAL_EPSILON) / EXPLORE
+      if explore_prob > 0:
+          explore_prob -= (INITIAL_EXPLORE_PROB - FINAL_EXPLORE_PROB) / EXPLORE_PROB_DECAY
           
     ## Call restore_network() only if resuming trainig
     restore_network()
@@ -309,7 +303,7 @@ if __name__ == "__main__":
     for i in range(start,50):
       start_time = time.time()
       # play game gets the 2k training points
-      data = play_game(s, readout, h_fc1, sess, epsilon, restore=False)
+      data = play_game(s, readout, h_fc1, sess, explore_prob, restore=False)
       print("Finished playing and storing transaction set {}. Saving the raw transactions...".format(i))
       np.save("Transactions/Transaction_set_{}".format(i), data)
       play_time = time.time()
@@ -320,8 +314,8 @@ if __name__ == "__main__":
       print("Transactions are processed with signal rewards learnable!")
       train_network(s, a, y, train_step, sess, data, i)
       # scale down epsilon
-      if epsilon < FINAL_EPSILON:
-          epsilon += (FINAL_EPSILON - INITIAL_EPSILON) / EXPLORE
+      if explore_prob > 0:
+          epsilon -= (INITIAL_EXPLORE_PROB - FINAL_EXPLORE_PROB) / EXPLORE_PROB_DECAY # won't get to negative
       total_time = time.time()
       print("Loop {}:".format(i))
       print("Playing time took {}".format(play_time-start_time))
