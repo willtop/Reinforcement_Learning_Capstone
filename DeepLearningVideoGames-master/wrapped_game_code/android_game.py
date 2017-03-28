@@ -21,9 +21,10 @@ REPLAY_MEMORY_DISCARD_AMOUNT = 500
 BATCH = 100
 NUM_EPOCHS = 5
 
+RENDER_DISPLAY = True
+
 
 class GameState:
-    RENDER_DISPLAY = False
     emulator_resolution = (240, 400)
     bounding_box = (1, 71, 121, 271)  # Daniel Laptop
     # bounding_box = (20, 100, 380, 700)  # Jason's laptop - Emulator
@@ -60,7 +61,7 @@ class GameState:
             }
             actions[chosen_action]()
 
-        if self.RENDER_DISPLAY:
+        if RENDER_DISPLAY:
             cv2.namedWindow('screen', cv2.WINDOW_NORMAL)
             cv2.resizeWindow('screen', self.screenshot_dims[0] * 3, self.screenshot_dims[1] * 3)
             cv2.imshow('screen', cv2.cvtColor(screenshot, cv2.COLOR_RGB2BGR))

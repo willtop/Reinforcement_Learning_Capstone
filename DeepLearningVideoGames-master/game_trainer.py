@@ -27,6 +27,8 @@ LEARNING_RATE = 1e-5
 PLAY_TO_WIN = False
 CHECKPOINTS_DIR = 'checkpoints_' + GAME + '/'
 
+RENDER_DISPLAY = True
+
 
 def train(s, readout, h_fc1, sess):
     # define the cost function
@@ -98,10 +100,15 @@ def train(s, readout, h_fc1, sess):
         frame_time = time.time()
         x_t1_col, r_t, terminal = game_state.frame_step(a_t)
         x_t1 = cv2.cvtColor(cv2.resize(x_t1_col, (80, 80)), cv2.COLOR_BGR2GRAY)
-        ret, x_t1 = cv2.threshold(x_t1, 1, 255, cv2.THRESH_BINARY)
         x_t1 = np.reshape(x_t1, (80, 80, 1))
         s_t1 = np.append(x_t1, s_t[:, :, 0:3], axis=2)
         frame_time = time.time() - frame_time
+
+        if RENDER_DISPLAY:
+            cv2.namedWindow('input', cv2.WINDOW_NORMAL)
+            cv2.resizeWindow('input', 80 * 3, 80 * 3)
+            cv2.imshow('input', cv2.cvtColor(x_t1, cv2.COLOR_GRAY2BGR))
+            cv2.waitKey(1)
 
         train_time = time.time()
         if not PLAY_TO_WIN:
