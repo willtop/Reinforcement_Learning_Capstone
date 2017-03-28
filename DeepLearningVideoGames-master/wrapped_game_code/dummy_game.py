@@ -19,6 +19,7 @@ to continually flip the screen color to maximize reward.
 
 NAME = 'dummy'
 ACTIONS = 3
+ACTION_PROBABILITIES = [1/3, 1/3, 1/3]
 GAMMA = 0.99
 OBSERVE = 200
 EXPLORE = 200
