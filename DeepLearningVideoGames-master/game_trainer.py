@@ -12,6 +12,7 @@ import android_game as game
 
 GAME = game.NAME  # the name of the game being played for log files
 ACTIONS = game.ACTIONS  # number of valid actions
+ACTION_PROBABILITIES = game.ACTION_PROBABILITIES  # probability distribution of actions
 GAMMA = game.GAMMA  # decay rate of past observations
 OBSERVE = game.OBSERVE  # timesteps to observe before training
 EXPLORE = game.EXPLORE  # frames over which to anneal epsilon
@@ -20,12 +21,11 @@ INITIAL_EPSILON = game.INITIAL_EPSILON  # starting value of epsilon
 REPLAY_MEMORY = game.REPLAY_MEMORY  # number of previous transitions to remember
 REPLAY_MEMORY_DISCARD_AMOUNT = game.REPLAY_MEMORY_DISCARD_AMOUNT  # number of previous transitions to discard when replay memory is full
 BATCH = game.BATCH  # size of minibatch
+NUM_EPOCHS = game.NUM_EPOCHS  # number of epochs of the replay memory to train on before discarding
 
 LEARNING_RATE = 1e-5
 PLAY_TO_WIN = False
 CHECKPOINTS_DIR = 'checkpoints_' + GAME + '/'
-
-IDLE_RATE = 1.2 # factor boosting up the probability for agent selecting an idle action during exploration stage
 
 
 def train(s, readout, h_fc1, sess):
@@ -85,14 +85,13 @@ def train(s, readout, h_fc1, sess):
         readout_time = time.time()
         readout_t = readout.eval(feed_dict={s: [s_t]})[0]
         a_t = np.zeros([ACTIONS])
-        action_index = 0
         if random.random() <= epsilon or t <= OBSERVE:
-            rand_number = random.random()
-            action_index = 0 if (rand_number <= 1/ACTIONS*IDLE_RATE) else 1
-            a_t[action_index] = 1
+            is_experimental_action = True
+            action_index = np.random.choice(ACTIONS, 1, p=ACTION_PROBABILITIES)[0]
         else:
+            is_experimental_action = False
             action_index = np.argmax(readout_t)
-            a_t[action_index] = 1
+        a_t[action_index] = 1
         readout_time = time.time() - readout_time
 
         # run the selected action and observe next state and reward
@@ -111,35 +110,36 @@ def train(s, readout, h_fc1, sess):
 
             # train on the entire replay memory when replay memory is full, then discard a portion of it
             if len(D) == REPLAY_MEMORY:
-                indices = list(range(0, len(D)))
-                random.shuffle(indices)
+                for epoch in range(0, NUM_EPOCHS):
+                    indices = list(range(0, len(D)))
+                    random.shuffle(indices)
 
-                minibatch = []
-                for i in indices:
-                    minibatch.append(D[i])
-                    if len(minibatch) == BATCH:
-                        # get the batch variables
-                        s_j_batch = [d[0] for d in minibatch]
-                        a_batch = [d[1] for d in minibatch]
-                        r_batch = [d[2] for d in minibatch]
-                        s_j1_batch = [d[3] for d in minibatch]
+                    minibatch = []
+                    for i in indices:
+                        minibatch.append(D[i])
+                        if len(minibatch) == BATCH:
+                            # get the batch variables
+                            s_j_batch = [d[0] for d in minibatch]
+                            a_batch = [d[1] for d in minibatch]
+                            r_batch = [d[2] for d in minibatch]
+                            s_j1_batch = [d[3] for d in minibatch]
 
-                        y_batch = []
-                        readout_j1_batch = readout.eval(feed_dict = {s : s_j1_batch})
-                        for i in range(0, len(minibatch)):
-                            # if terminal only equals reward
-                            if minibatch[i][4]:
-                                y_batch.append(r_batch[i])
-                            else:
-                                y_batch.append(r_batch[i] + GAMMA * np.max(readout_j1_batch[i]))
+                            y_batch = []
+                            readout_j1_batch = readout.eval(feed_dict = {s : s_j1_batch})
+                            for i in range(0, len(minibatch)):
+                                # if terminal only equals reward
+                                if minibatch[i][4]:
+                                    y_batch.append(r_batch[i])
+                                else:
+                                    y_batch.append(r_batch[i] + GAMMA * np.max(readout_j1_batch[i]))
 
-                        # perform gradient step
-                        train_step.run(feed_dict={
-                            y: y_batch,
-                            a: a_batch,
-                            s: s_j_batch})
+                            # perform gradient step
+                            train_step.run(feed_dict={
+                                y: y_batch,
+                                a: a_batch,
+                                s: s_j_batch})
 
-                        minibatch.clear()
+                            minibatch.clear()
 
                 # empty out a portion of the replay memory
                 D = D[REPLAY_MEMORY_DISCARD_AMOUNT:]
@@ -158,9 +158,10 @@ def train(s, readout, h_fc1, sess):
         else:
             state = "train"
 
-        if t % 100 == 0:
-            print("TIMESTEP", t, "/ STATE", state, "/ EPSILON", "{0:.3f}".format(epsilon), "/ ACTION", action_index,
-                  "/ REWARD", "{0:5}".format(r_t), "/ Q_MAX %e" % np.max(readout_t), "/ TERMINAL", "True " if terminal else "False",
+        if t % 1 == 0:
+            print("TIMESTEP", t, "/ STATE", state, "/ EPSILON", "{0:.3f}".format(epsilon),
+                  "/ ACTION", action_index, "?" if is_experimental_action else " ",
+                  "/ REWARD", "{0:5}".format(r_t), "/ Q ", readout_t, "/ TERMINAL", "True " if terminal else "False",
                   "/ READOUT_TIME", "{0:.4f}".format(readout_time),
                   "/ FRAME_TIME", "{0:.4f}".format(frame_time),
                   "/ BATCH_TIME", "{0:.4f}".format(train_time))

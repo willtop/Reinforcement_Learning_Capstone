@@ -5,19 +5,21 @@ import android_game_params
 from PIL import Image, ImageGrab
 from android_output_processor import output_processor
 
-selected_params = android_game_params.flappy_cat_params
+selected_params = android_game_params.zigzag_boom_params
 
 NAME = selected_params.name
 ACTIONS = 2
-GAMMA = 0.99
+ACTION_PROBABILITIES = [0.8, 0.2]
+GAMMA = 0.95
 OBSERVE = 10000
 
 EXPLORE = 100000
 FINAL_EPSILON = 0.0
 INITIAL_EPSILON = 1.0
 REPLAY_MEMORY = 10000
-REPLAY_MEMORY_DISCARD_AMOUNT = 100
+REPLAY_MEMORY_DISCARD_AMOUNT = 500
 BATCH = 100
+NUM_EPOCHS = 5
 
 
 class GameState:
@@ -45,10 +47,10 @@ class GameState:
         im = raw_im.resize(self.screenshot_dims, Image.ANTIALIAS)
         screenshot = np.asarray(im)
 
-        reward = 1
-        terminal = self.__check_terminal_state(screenshot)
+        reward = 1 if input_vec[0] == 0 else 0
+        terminal = self.__check_terminal_state(screenshot, selected_params.is_terminal_state_check_negative)
         if terminal:
-            reward = -100
+            reward = -10
             self.__restart()
         else:
             chosen_action = np.argmax(input_vec)
@@ -67,18 +69,25 @@ class GameState:
         return screenshot, reward, terminal
 
     def __restart(self):
+        time.sleep(1.5)
         output_processor.tap(self.__denormalize_screen_position(self.params.restart_tap_position))
-        time.sleep(0.5)
+        time.sleep(0.3)
+        output_processor.tap(self.__denormalize_screen_position(self.params.restart_tap_position))
+        time.sleep(0.2)
 
-    def __check_terminal_state(self, screenshot):
-        check = True
+    def __check_terminal_state(self, screenshot, is_negative_check):
+        is_terminal = True
         for pixel, color in zip(self.params.terminal_pixel_position, self.params.terminal_pixel_color):
             pixel_color = self.get_pixel_color(screenshot, pixel)
             for c in range(0, 3):
-                if pixel_color[c] < color[c] - self.TERMINAL_PIXEL_TOLERANCE or \
-                        pixel_color[c] > color[c] + self.TERMINAL_PIXEL_TOLERANCE:
-                    check = False
-        return check
+                is_within_tolerance = \
+                    color[c] - self.TERMINAL_PIXEL_TOLERANCE < pixel_color[c] < color[c] + self.TERMINAL_PIXEL_TOLERANCE \
+                    if not is_negative_check else \
+                    color[c] - self.TERMINAL_PIXEL_TOLERANCE > pixel_color[c] or pixel_color[c] > color[c] + self.TERMINAL_PIXEL_TOLERANCE
+
+                is_terminal = is_terminal and is_within_tolerance
+
+        return is_terminal
 
     def __denormalize_screen_position(self, position):
         x = int(position[0] * self.emulator_resolution[0])

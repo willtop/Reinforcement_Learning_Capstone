@@ -3,12 +3,14 @@ class GameParams:
     tap_position, restart_tap_position, terminal_pixel_position: list of normalized screen points [x, y]
     terminal_pixel_color: list of color [r, g, b].
     """
-    def __init__(self, name, tap_position, restart_tap_position, terminal_pixel_position, terminal_pixel_color):
+    def __init__(self, name, tap_position, restart_tap_position, terminal_pixel_position, terminal_pixel_color,
+                 is_terminal_state_check_negative = False):
         self.name = name
         self.tap_position = tap_position
         self.restart_tap_position = restart_tap_position
         self.terminal_pixel_position = terminal_pixel_position
         self.terminal_pixel_color = terminal_pixel_color
+        self.is_terminal_state_check_negative = is_terminal_state_check_negative
 
 stack_params = GameParams(
     'stack',
@@ -42,5 +44,6 @@ zigzag_boom_params = GameParams(
     'zigzag_boom',
     [0.5, 0.5],
     [0.6, 0.7],
-    [[0.6, 0.7]],
-    [[251, 206, 25]])
+    [[0, 0]],
+    [[248, 202, 5]],
+    True)
