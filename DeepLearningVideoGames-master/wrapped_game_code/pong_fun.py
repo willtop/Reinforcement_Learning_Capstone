@@ -8,6 +8,7 @@ import sys
 
 NAME = 'pong'
 ACTIONS = 3
+ACTION_PROBABILITIES = [1/3, 1/3, 1/3]
 GAMMA = 0.99
 OBSERVE = 10000
 EXPLORE = 100000
@@ -16,6 +17,7 @@ INITIAL_EPSILON = 1.0
 REPLAY_MEMORY = 10000
 REPLAY_MEMORY_DISCARD_AMOUNT = 100
 BATCH = 100
+NUM_EPOCHS = 1
 
 if len(sys.argv) == 2 and sys.argv[1] == '--headless':
     os.environ['SDL_VIDEODRIVER'] = 'dummy'
