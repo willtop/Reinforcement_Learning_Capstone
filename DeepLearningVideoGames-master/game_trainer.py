@@ -28,7 +28,7 @@ PLAY_TO_WIN = False
 TARGET_FRAME_TIME = 0.0666666
 CHECKPOINTS_DIR = 'checkpoints_' + GAME + '/'
 
-RENDER_DISPLAY = True
+RENDER_DISPLAY = False
 
 
 def train(s, readout, h_fc1, sess):
@@ -105,16 +105,6 @@ def train(s, readout, h_fc1, sess):
         s_t1 = np.append(x_t1, s_t[:, :, 0:3], axis=2)
         frame_time = time.time() - frame_time
 
-        delay_time = TARGET_FRAME_TIME - readout_time - frame_time
-        if delay_time > 0:
-            time.sleep(delay_time)
-
-        if RENDER_DISPLAY:
-            cv2.namedWindow('input', cv2.WINDOW_NORMAL)
-            cv2.resizeWindow('input', 80 * 3, 80 * 3)
-            cv2.imshow('input', cv2.cvtColor(x_t1, cv2.COLOR_GRAY2BGR))
-            cv2.waitKey(1)
-
         train_time = time.time()
         if not PLAY_TO_WIN:
             # store the transition in D
@@ -137,7 +127,7 @@ def train(s, readout, h_fc1, sess):
                             s_j1_batch = [d[3] for d in minibatch]
 
                             y_batch = []
-                            readout_j1_batch = readout.eval(feed_dict = {s : s_j1_batch})
+                            readout_j1_batch = readout.eval(feed_dict={s: s_j1_batch})
                             for i in range(0, len(minibatch)):
                                 # if terminal only equals reward
                                 if minibatch[i][4]:
@@ -157,6 +147,37 @@ def train(s, readout, h_fc1, sess):
                 D = D[REPLAY_MEMORY_DISCARD_AMOUNT:]
         train_time = time.time() - train_time
 
+        display_time = time.time()
+        if RENDER_DISPLAY:
+            font = cv2.FONT_HERSHEY_SIMPLEX
+
+            s_t_window = 's_t'
+            s_t_display = cv2.cvtColor(np.concatenate(np.rollaxis(s_t, 2)), cv2.COLOR_GRAY2BGR)
+            cv2.putText(s_t_display, str(get_prev_action(D, 2)), (10, 10 + 80 * 0), font, 0.2, (0, 0, 255), 1, cv2.LINE_AA)
+            cv2.putText(s_t_display, str(get_prev_action(D, 3)), (10, 10 + 80 * 1), font, 0.2, (0, 0, 255), 1, cv2.LINE_AA)
+            cv2.putText(s_t_display, str(get_prev_action(D, 4)), (10, 10 + 80 * 2), font, 0.2, (0, 0, 255), 1, cv2.LINE_AA)
+            cv2.putText(s_t_display, str(get_prev_action(D, 5)), (10, 10 + 80 * 3), font, 0.2, (0, 0, 255), 1, cv2.LINE_AA)
+            cv2.namedWindow(s_t_window, cv2.WINDOW_NORMAL)
+            cv2.resizeWindow(s_t_window, 80 * 3, 80 * 3 * 4)
+            cv2.imshow(s_t_window, s_t_display)
+
+            s_t1_window = 's_t_1'
+            s_t1_display = cv2.cvtColor(np.concatenate(np.rollaxis(s_t1, 2)), cv2.COLOR_GRAY2BGR)
+            cv2.putText(s_t1_display, str(get_prev_action(D, 1)), (10, 10 + 80 * 0), font, 0.2, (0, 0, 255), 1, cv2.LINE_AA)
+            cv2.putText(s_t1_display, str(get_prev_action(D, 2)), (10, 10 + 80 * 1), font, 0.2, (0, 0, 255), 1, cv2.LINE_AA)
+            cv2.putText(s_t1_display, str(get_prev_action(D, 3)), (10, 10 + 80 * 2), font, 0.2, (0, 0, 255), 1, cv2.LINE_AA)
+            cv2.putText(s_t1_display, str(get_prev_action(D, 4)), (10, 10 + 80 * 3), font, 0.2, (0, 0, 255), 1, cv2.LINE_AA)
+            cv2.namedWindow(s_t1_window, cv2.WINDOW_NORMAL)
+            cv2.resizeWindow(s_t1_window, 80 * 3, 80 * 3 * 4)
+            cv2.imshow(s_t1_window, s_t1_display)
+
+            cv2.waitKey(1)
+        display_time = time.time() - display_time
+
+        delay_time = TARGET_FRAME_TIME - readout_time - frame_time - train_time - display_time
+        if delay_time > 0:
+            time.sleep(delay_time)
+
         # save progress every 10000 iterations
         if t % 10000 == 0 and t > 0 and not PLAY_TO_WIN:
             saver.save(sess, CHECKPOINTS_DIR + 'checkpoint', global_step=t)
@@ -171,13 +192,18 @@ def train(s, readout, h_fc1, sess):
             state = "train"
 
         if t % 1 == 0:
-            print("TIMESTEP", t, "/ STATE", state, "/ EPSILON", "{0:.3f}".format(epsilon),
+            print("TIMESTEP", t,
+                  "/ STATE", state,
+                  "/ EPSILON", "{0:.3f}".format(epsilon),
                   "/ ACTION", action_index, "?" if is_experimental_action else " ",
-                  "/ REWARD", "{0:5}".format(r_t), "/ Q ", readout_t, "/ TERMINAL", "True " if terminal else "False",
-                  "/ READOUT_TIME", "{0:.4f}".format(readout_time),
-                  "/ FRAME_TIME", "{0:.4f}".format(frame_time),
-                  "/ DELAY_TIME", "{0:.4f}".format(delay_time),
-                  "/ BATCH_TIME", "{0:.4f}".format(train_time))
+                  "/ REWARD", "{0:4}".format(r_t),
+                  "/ Q ", readout_t,
+                  "/ TERMINAL", "True " if terminal else "False",
+                  "/ READOUT_TIME", "{0:.3f}".format(readout_time),
+                  "/ FRAME_TIME", "{0:.3f}".format(frame_time),
+                  "/ TRAIN_TIME", "{0:.3f}".format(train_time),
+                  "/ DISPLAY_TIME", "{0:.3f}".format(display_time),
+                  "/ DELAY_TIME", "{0:.3f}".format(delay_time))
 
         # write info to files
         '''
@@ -191,6 +217,12 @@ def train(s, readout, h_fc1, sess):
         s_t = s_t1
         t += 1
 
+
+def get_prev_action(D, offset):
+    try:
+        return D[-offset][1]
+    except IndexError:
+        return []
 
 if __name__ == '__main__':
     sess = tf.InteractiveSession()

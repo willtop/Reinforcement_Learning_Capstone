@@ -5,7 +5,9 @@ import android_game_params
 from PIL import Image, ImageGrab
 from android_output_processor import output_processor
 
-selected_params = android_game_params.zigzag_boom_params
+selected_params = android_game_params.zigzag_params
+
+ACTION_PROPAGATION_DELAY = 0.0
 
 NAME = selected_params.name
 ACTIONS = 2
@@ -21,7 +23,7 @@ REPLAY_MEMORY_DISCARD_AMOUNT = 500
 BATCH = 100
 NUM_EPOCHS = 5
 
-RENDER_DISPLAY = True
+RENDER_DISPLAY = False
 
 
 class GameState:
@@ -44,24 +46,31 @@ class GameState:
         if sum(input_vec) != 1:
             raise ValueError('Multiple input actions!')
 
+        # Perform the action first. Make sure the action does not accidentally restart the game in a terminal state
+        chosen_action = np.argmax(input_vec)
+        actions = {
+            0: lambda: True,
+            1: lambda: output_processor.tap((self.__denormalize_screen_position(self.params.tap_position)))
+        }
+        actions[chosen_action]()
+
+        # Wait for the performed action to change the game screen
+        time.sleep(ACTION_PROPAGATION_DELAY)
+
+        # Take a screenshot of the game, which is the state that resulted from taking the action from the previous state
         raw_im = ImageGrab.grab(bbox=self.bounding_box)
         im = raw_im.resize(self.screenshot_dims, Image.ANTIALIAS)
         screenshot = np.asarray(im)
 
-        reward = 1 if input_vec[0] == 0 else 0
+        # Check if the state is terminal, and assign the reward
+        reward = 1
         terminal = self.__check_terminal_state(screenshot, selected_params.is_terminal_state_check_negative)
         if terminal:
-            reward = -10
+            reward = -1
             self.__restart()
-        else:
-            chosen_action = np.argmax(input_vec)
-            actions = {
-              0: lambda: True,
-              1: lambda: output_processor.tap((self.__denormalize_screen_position(self.params.tap_position)))
-            }
-            actions[chosen_action]()
 
         if RENDER_DISPLAY:
+            cv2.putText(screenshot, str(input_vec), (10, 10), cv2.FONT_HERSHEY_SIMPLEX, 0.2, (255, 0, 0), 1, cv2.LINE_AA)
             cv2.namedWindow('screen', cv2.WINDOW_NORMAL)
             cv2.resizeWindow('screen', self.screenshot_dims[0] * 3, self.screenshot_dims[1] * 3)
             cv2.imshow('screen', cv2.cvtColor(screenshot, cv2.COLOR_RGB2BGR))
