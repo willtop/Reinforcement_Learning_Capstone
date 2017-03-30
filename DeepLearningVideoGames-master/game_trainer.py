@@ -25,6 +25,7 @@ NUM_EPOCHS = game.NUM_EPOCHS  # number of epochs of the replay memory to train o
 
 LEARNING_RATE = 1e-5
 PLAY_TO_WIN = False
+TARGET_FRAME_TIME = 0.0666666
 CHECKPOINTS_DIR = 'checkpoints_' + GAME + '/'
 
 RENDER_DISPLAY = True
@@ -104,6 +105,10 @@ def train(s, readout, h_fc1, sess):
         s_t1 = np.append(x_t1, s_t[:, :, 0:3], axis=2)
         frame_time = time.time() - frame_time
 
+        delay_time = TARGET_FRAME_TIME - readout_time - frame_time
+        if delay_time > 0:
+            time.sleep(delay_time)
+
         if RENDER_DISPLAY:
             cv2.namedWindow('input', cv2.WINDOW_NORMAL)
             cv2.resizeWindow('input', 80 * 3, 80 * 3)
@@ -171,6 +176,7 @@ def train(s, readout, h_fc1, sess):
                   "/ REWARD", "{0:5}".format(r_t), "/ Q ", readout_t, "/ TERMINAL", "True " if terminal else "False",
                   "/ READOUT_TIME", "{0:.4f}".format(readout_time),
                   "/ FRAME_TIME", "{0:.4f}".format(frame_time),
+                  "/ DELAY_TIME", "{0:.4f}".format(delay_time),
                   "/ BATCH_TIME", "{0:.4f}".format(train_time))
 
         # write info to files
