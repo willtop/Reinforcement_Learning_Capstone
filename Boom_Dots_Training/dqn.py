@@ -26,15 +26,15 @@ INPUT_DIMS = (60, 100) # Dimension for input image to CNN
 NUM_FRAMES = 4 # Number of frames in each training data point
 GAMMA = 0.90  # decay rate of past observations
 # OBSERVE = 500.  # timesteps to observe before training
-INITIAL_EXPLORE_PROB = 0.0
-FINAL_EXPLORE_PROB = 0.0
-EXPLORE_PROB_DECAY = 10 # amount of total timesteps to redunce the probability of exploration
+INITIAL_EXPLORE_PROB = 1.0
+FINAL_EXPLORE_PROB = 0.2
+EXPLORE_PROB_DECAY = 20 # amount of total timesteps to redunce the probability of exploration
 TAB_PROB = 0.7 # assign 70% chance to explore tapping
 # a value of 0 corresponds to random decision
-REPLAY_MEMORY = 50  # number of previous transitions to remember
+REPLAY_MEMORY = 500  # number of previous transitions to remember
 # Total size of training data
 TRAINING_ITER = 5 #Number of training iterations over the training data
-BATCH = 5  # size of minibatch. Should be divisible by REPLAY_MEMORY
+BATCH = 250  # size of minibatch. Should be divisible by REPLAY_MEMORY
 LEARNING_RATE = 1e-3
 RENDER_DISPLAY = False
 
@@ -158,7 +158,9 @@ def play_game(s, readout, h_fc1, sess, explore_prob, restore = False):
     s_t = np.stack((x_t_1, x_t_2, x_t_3, x_t_4),axis=2) #each "pixel" contains 4 pixels stacked together
     # print(s_t.shape)
     
-    # start preparing 2000 transactions
+    # For seeing how the network is trained
+    explore_prob = 0 
+    # start preparing pre-specified amount of transactions
     t = 0
     while t < REPLAY_MEMORY:
         # always need to compute the below quantities for storing transactions
@@ -224,7 +226,7 @@ def play_game(s, readout, h_fc1, sess, explore_prob, restore = False):
             # print(x_t_1.shape)
             s_t = np.stack((x_t_1, x_t_2, x_t_3, x_t_4),axis=2)
             # input()
-        time.sleep(1)
+        #time.sleep(0.5)
         # update the transaction number at the end    
         t += 1    
 
@@ -282,7 +284,7 @@ if __name__ == "__main__":
     
     # If resuming training, set start accordingly
     # start = 0 if there is not previous training data
-    start = 0
+    start = 12
     
     # recover the explore_prob to the current training stage corresponding value
     for i in range(start):
@@ -316,7 +318,7 @@ if __name__ == "__main__":
       print("Transactions are processed with signal rewards learnable!")
       train_network(s, a, y, train_step, sess, data, i)
       # scale down epsilon
-      if explore_prob > 0:
+      if explore_prob > FINAL_EXPLORE_PROB:
           explore_prob -= (INITIAL_EXPLORE_PROB - FINAL_EXPLORE_PROB) / EXPLORE_PROB_DECAY # won't get to negative
       total_time = time.time()
       print("Loop {}:".format(i))
