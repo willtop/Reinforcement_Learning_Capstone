@@ -39,7 +39,7 @@ class Game:
         #    print("just tapped!")
 
         # shouldn't wait here for a bit?
-        time.sleep(0.3)
+        time.sleep(0.25)
 
         raw_im = ImageGrab.grab(bbox=self.bounding_box)
         # score_im = np.asarray(raw_im.crop(self.params.score_box))

@@ -178,7 +178,7 @@ def play_game(s, readout, h_fc1, sess, explore_prob, restore = False):
             action_index = np.argmax(readout_t)
             a_t[action_index] = 1
         
-            
+        print("Q_TAP %g" % readout_t[1], "/ Q_NONE %g" % readout_t[0])    
         # Apply action and get 1 next frame
         print("Initiate transaction: {} with action {}".format(t, action_index))
         x_t1[0], _, terminal = game.frame_step(a_t)
@@ -186,7 +186,7 @@ def play_game(s, readout, h_fc1, sess, explore_prob, restore = False):
         # x_t1[0], terminal = game.frame_step(do_nothing)
         ######
         for i in range(1, NUM_FRAMES):
-            time.sleep(0.2)
+            time.sleep(0.15)
             # Get next three with doing nothing
             x_t1[i], increment, terminal = game.frame_step(do_nothing)
         s_t1 = np.stack((x_t1[0], x_t1[1], x_t1[2], x_t1[3]), axis=2)
