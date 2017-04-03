@@ -4,8 +4,11 @@ from PIL import Image, ImageGrab, ImageEnhance, ImageFilter
 import numpy as np
 import time
 
+
 # define a global variable record the current score 
 # current_score = 0
+
+debug = False
 
 class ScoreCalc:
   def __init__(self):
@@ -15,7 +18,8 @@ class ScoreCalc:
     self.current_score = 0
     
   def getScore(self, score_im):
-      
+  
+    raw_score = score_im
     kernel = np.ones((3, 3), np.uint8)
     score_im = cv2.dilate(score_im, kernel, iterations=1)
     _, score_im = cv2.threshold(score_im, 225, 255, cv2.THRESH_BINARY)
@@ -32,9 +36,19 @@ class ScoreCalc:
         if cv2.contourArea(c) < 114:
             cv2.drawContours(mask, [c], -1, 0, -1)
     score_im = cv2.bitwise_and(score_im, score_im, mask=mask)
+    
+    if debug:
+      cv2.namedWindow('score', cv2.WINDOW_NORMAL)
+      cv2.resizeWindow('score', (290-190)*3, (202-127)*3)
+      cv2.imshow('score', cv2.cvtColor(raw_score, cv2.COLOR_GRAY2BGR))
+      cv2.namedWindow('score_processed', cv2.WINDOW_NORMAL)
+      cv2.resizeWindow('score_processed', (290-190)*3, (202-127)*3)
+      cv2.imshow('score_processed', cv2.cvtColor(score_im, cv2.COLOR_GRAY2BGR))
+      cv2.waitKey(1)
 
     try:
       score = pytesseract.image_to_string(Image.fromarray(score_im).resize((score_width_ori*2, score_height_ori*2), Image.ANTIALIAS), config='-psm 8 digits_only')
+      # score = pytesseract.image_to_string(Image.fromarray(score_im), config='-psm 10')
       # print("Raw Score: {}".format(score))
     except UnicodeDecodeError:
       return -1
@@ -71,13 +85,17 @@ class ScoreCalc:
         except ValueError:
             return -1
 
+    if debug:
+      print("teressact: {}".format(score))
+
     valid = False
     # if obtaining a valid score:
     if(len(final_score) > 0):
         if(int(''.join(map(str, final_score))) >= self.current_score and int(''.join(map(str, final_score))) <= self.current_score+3):
             self.current_score = int(''.join(map(str, final_score)))
             valid = True
-    #print("raw: {}".format(int(''.join(map(str, final_score)))))
+        if debug:
+          print("hardcode: {}".format(int(''.join(map(str, final_score)))))
       # additional fix for starting with 1
         if(int(''.join(map(str, final_score))) + 10 >= self.current_score and int(''.join(map(str, final_score))) + 10 <= self.current_score+3):
             self.current_score = int(''.join(map(str, final_score))) + 10

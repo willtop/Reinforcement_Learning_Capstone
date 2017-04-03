@@ -7,7 +7,7 @@ from game_params import *
 
 
 def main():
-    game = Game((100, 166), Jason_stack_params, auto_restart=False)
+    game = Game((60, 100), Jason_stack_params_phone, auto_restart=False)
 
     i = 0
 

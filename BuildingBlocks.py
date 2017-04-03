@@ -8,6 +8,8 @@ positive_do_nothing_reward = 0
 negative_reward = -1
 negative_opposite_action_reward = -1
 
+debug = False
+
 
 class DataDistribution:
   def __init__(self, dataset, discountFactor):
@@ -80,9 +82,15 @@ class DataDistribution:
           exit()
         ScoreCalculator.resertScore()
         score = 0
+        if i < 100:
+          print("Terminal state")
         continue
         
       new_score = ScoreCalculator.getScore(d[3])
+      if i < 100:
+        print("New score: {}".format(new_score))
+      if debug:
+        input()
       #if score calculator failed, delete data point
       if new_score == -1:
         toDelete.append(i)

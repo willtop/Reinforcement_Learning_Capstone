@@ -19,14 +19,14 @@ from BuildingBlocks import DataDistribution
 from game_wrapper import Game
 
 GAME = 'stack'  # the name of the game being played for log files
-GAME_PARAMS = Jason_stack_params
+GAME_PARAMS = Jason_stack_params_phone
 ACTIONS = 2  # number of valid actions
 INPUT_DIMS = (60, 100)
 NUM_FRAMES = 4 # Number of frames in each training data point
 GAMMA = 0.90  # decay rate of past observations
 # OBSERVE = 500.  # timesteps to observe before training
 EXPLORE = 40  # iterations over which to anneal epsilon
-FINAL_EPSILON = 1  # final value of epsilon
+FINAL_EPSILON = 4  # final value of epsilon
 INITIAL_EPSILON = 0  # starting value of epsilon
 # a value of 0 corresponds to random decision
 REPLAY_MEMORY = 2000  # number of previous transitions to remember
@@ -181,7 +181,7 @@ def play_game(s, readout, h_fc1, sess, epsilon, restore = False):
         # Apply action and get 3 next
         x_t1[0], _, terminal = game.frame_step(a_t)
         ### DEBUG ###
-        # x_t1[0], terminal = game.frame_step(do_nothing)
+        # x_t1[0], _,  terminal = game.frame_step(do_nothing)
         ######
         for i in range(1, NUM_FRAMES):
             time.sleep(0.1)
@@ -193,6 +193,7 @@ def play_game(s, readout, h_fc1, sess, epsilon, restore = False):
         D.append([s_t, a_t, s_t1, score, Q_max_last, terminal])
             
         print("TIMESTEP", t, "/ EPSILON", epsilon, "/ ACTION", action_index, "/ Q_TAP %g" % readout_t[1], "/ Q_NONE %g" % readout_t[0], "/ TERMINAL ", terminal)
+        # print("Prob_Tap {} / decision {}".format(Prob_Tap, decision))
         # print("Tap_unnorm {} / Tap_norm {} / Prob_Tap {} / decision {}".format(tap_unnorm, norm, Prob_Tap, decision))
         # log_file.write("TIMESTEP", t, "/ EPSILON", epsilon, "/ ACTION", action_index, "/ Q_MAX %e" % Q_max_last, "/ TERMINAL ", terminal, '\n')
         
@@ -272,47 +273,47 @@ if __name__ == "__main__":
     epsilon = INITIAL_EPSILON
     sess.run(tf.global_variables_initializer())
         
-    ### TRAINING SECTION ###
-    # For each loop, we save Test_Data_i.npy which is the collection of the 2k training examples
-    # and the model after training in saved_networks/
+    # ### TRAINING SECTION ###
+    # # For each loop, we save Test_Data_i.npy which is the collection of the 2k training examples
+    # # and the model after training in saved_networks/
     
-    # If resuming training, set start accordingly
-    # start = 0 if there is not previous training data
-    start = 0
+    # # If resuming training, set start accordingly
+    # # start = 0 if there is not previous training data
+    start = 43
     
-    for i in range(start):
-      ## Run the below commented code if you want to retrain the model with the save play data
-      # data =  np.load("Test_Data_{}.npy".format(i))
+    # for i in range(start):
+      # # ## Run the below commented code if you want to retrain the model with the save play data
+      # # data =  np.load("Test_Data_{}.npy".format(i))
+      # # data = DataDistribution(data, GAMMA)
+      # # data.processInput()
+      # # train_network(s, a, y, train_step, sess, data, i)
+      # if epsilon < FINAL_EPSILON:
+          # epsilon += (FINAL_EPSILON - INITIAL_EPSILON) / EXPLORE
+          
+    # # ## Call restore_network() only if resuming trainig
+    # restore_network()
+    
+    # for i in range(start,50):
+      # start_time = time.time()
+      # # play game gets the 2k training points
+      # data = play_game(s, readout, h_fc1, sess, epsilon, restore=False)
+      # np.save("Test_Data_{}".format(i), data)
+      # play_time = time.time()
+      
+      # # DataDistribution and processInput calculate the state, reward pairs
       # data = DataDistribution(data, GAMMA)
       # data.processInput()
       # train_network(s, a, y, train_step, sess, data, i)
-      if epsilon < FINAL_EPSILON:
-          epsilon += (FINAL_EPSILON - INITIAL_EPSILON) / EXPLORE
-          
-    ## Call restore_network() only if resuming trainig
-    restore_network()
-    
-    for i in range(start,50):
-      start_time = time.time()
-      # play game gets the 2k training points
-      data = play_game(s, readout, h_fc1, sess, epsilon, restore=False)
-      np.save("Test_Data_{}".format(i), data)
-      play_time = time.time()
-      
-      # DataDistribution and processInput calculate the state, reward pairs
-      data = DataDistribution(data, GAMMA)
-      data.processInput()
-      train_network(s, a, y, train_step, sess, data, i)
-      # scale down epsilon
-      if epsilon < FINAL_EPSILON:
-          epsilon += (FINAL_EPSILON - INITIAL_EPSILON) / EXPLORE
-      total_time = time.time()
-      print("Loop {}:".format(i))
-      print("Playing time took {}".format(play_time-start_time))
-      print("Training time took {}".format(total_time-play_time))
+      # # scale down epsilon
+      # if epsilon < FINAL_EPSILON:
+          # epsilon += (FINAL_EPSILON - INITIAL_EPSILON) / EXPLORE
+      # total_time = time.time()
+      # print("Loop {}:".format(i))
+      # print("Playing time took {}".format(play_time-start_time))
+      # print("Training time took {}".format(total_time-play_time))
       
     ### TESTING SECTION ###
     # Epsilson should range from 0 (random) to +inf. Set to -1 for deterministic play
-    # epsilson = -1
-    # _ = play_game(s, readout, h_fc1, sess, epsilson, restore=True)
+    epsilson = 5
+    _ = play_game(s, readout, h_fc1, sess, epsilson, restore=True)
     

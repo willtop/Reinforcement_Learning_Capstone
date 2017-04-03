@@ -7,22 +7,25 @@ import time
 
 class Game:
     RENDER_DISPLAY = False
-    emulator_resolution = (480, 800)
+    emulator_resolution = (480, 854)
+    display_resolution = (480, 854)
     # corner = (0,0)
     # bounding_box = (0, 70, 292, 560)  # Daniel Laptop
     # bounding_box = (20, 100, 380, 700)  # Jason's laptop - Emulator
     
     # Jason's Leapdroid Settings
-    corner = win32gui.GetWindowRect(win32gui.FindWindow(None,"Leapdroid"))
+    # corner = win32gui.GetWindowRect(win32gui.FindWindow(None,"Leapdroid"))
     # corner = win32gui.GetWindowRect(win32gui.FindWindow(None,"Nox-1"))
-    # corner = (0,0)
-    bounding_box = (corner[0], corner[1]+40, corner[0]+emulator_resolution[0], corner[1]+emulator_resolution[1])
+    # corner = win32gui.GetWindowRect(win32gui.FindWindow(None,"Vysor"))
+    corner = (0,105)
+    # bounding_box = (corner[0], corner[1]+40, corner[0]+emulator_resolution[0], corner[1]+emulator_resolution[1])
+    bounding_box = (corner[0], corner[1], corner[0]+display_resolution[0], corner[1]+display_resolution[1])
     # print("Found box: {}".format(bounding_box))
     box_width = bounding_box[2] - bounding_box[0]
     box_height = bounding_box[3] - bounding_box[1]
     
     #Terminal state check pixel colour tolerance
-    tolerance = 5
+    tolerance = 7
 
     def __init__(self, screenshot_dims, params, auto_restart=False):
         self.screenshot_dims = screenshot_dims
