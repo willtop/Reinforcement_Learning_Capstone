@@ -3,7 +3,7 @@ import tensorflow as tf
 #Don't need processing score: from input_processor import ScoreCalc
 
 #SCORES
-waiting_reward = -0.5
+waiting_reward = -0.2 # It was -0.5 however it would encourage agent to blindly make first tap
 lasting_reward = 0.2
 terminate_reward = -1
 first_tab_reward = 0.5

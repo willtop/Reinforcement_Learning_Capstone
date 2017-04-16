@@ -159,7 +159,7 @@ def play_game(s, readout, h_fc1, sess, explore_prob, restore = False):
     # print(s_t.shape)
     
     # For seeing how the network is trained
-    # explore_prob = 0 
+    #explore_prob = 0 
     # start preparing pre-specified amount of transactions
     t = 0
     while t < REPLAY_MEMORY:
@@ -178,7 +178,7 @@ def play_game(s, readout, h_fc1, sess, explore_prob, restore = False):
             action_index = np.argmax(readout_t)
             a_t[action_index] = 1
         
-        # print("Q_TAP %g" % readout_t[1], "/ Q_NONE %g" % readout_t[0])    
+        #print("Q_TAP %g" % readout_t[1], "/ Q_NONE %g" % readout_t[0])    
         # Apply action and get 1 next frame
         #print("Initiate transaction: {} with action {}".format(t, action_index))
         x_t1[0], _, terminal = game.frame_step(a_t)
@@ -284,7 +284,7 @@ if __name__ == "__main__":
     
     # If resuming training, set start accordingly
     # start = 0 if there is not previous training data
-    start = 28
+    start = 41
     
     # recover the explore_prob to the current training stage corresponding value
     for i in range(start):
@@ -303,8 +303,8 @@ if __name__ == "__main__":
         os.makedirs("Transactions/")
 
     print("Main program: start playing stage...")
-    # save 50 sets of 2000 transactions 
-    for i in range(start,50):
+    # save 100 sets of 2000 transactions 
+    for i in range(start,100):
       start_time = time.time()
       # play game gets the 2k training points
       data = play_game(s, readout, h_fc1, sess, explore_prob, restore=True)
