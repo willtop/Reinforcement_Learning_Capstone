@@ -1,6 +1,6 @@
 #!python3
-from output_monkeyrunner_python import OutputMonkeyrunnerPython
-from output_arduino import OutputArduino
+#from output_monkeyrunner_python import OutputMonkeyrunnerPython
+#from output_arduino import OutputArduino
 from output_pyautogui import OutputPyautogui
 
 # output_processor = OutputMonkeyrunnerPython()

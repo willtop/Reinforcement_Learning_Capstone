@@ -6,11 +6,11 @@ import time
 
 class Game:
     RENDER_DISPLAY = False
-    emulator_resolution = (350, 600)    
+    emulator_resolution = (485, 770)    
     # bounding_box = (0, 70, 292, 560)  # Daniel Laptop
     # bounding_box = (20, 100, 380, 700)  # Jason's laptop - Emulator
     corner = (0,0) # upper left corner placement of the game field
-    bounding_box = (0, 0, 350, 600) # for getting game field, the emulator screen 
+    bounding_box = (0, 0, 485, 770) # for getting game field, the emulator screen 
     # print("Found box: {}".format(bounding_box))
     box_width = bounding_box[2] - bounding_box[0]
     box_height = bounding_box[3] - bounding_box[1]

@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from input_processor import ScoreCalc
+#Don't need processing score: from input_processor import ScoreCalc
 
 #SCORES
 waiting_reward = -0.5
@@ -41,7 +41,7 @@ class DataDistribution:
     
   def processInput(self):
     print("pre-processing")
-    ScoreCalculator = ScoreCalc()
+    #Don't need score processor: ScoreCalculator = ScoreCalc()
     
     data = np.array(self.dataset)
     self.state = data[:,0]
