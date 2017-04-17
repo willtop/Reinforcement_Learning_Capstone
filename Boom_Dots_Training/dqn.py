@@ -159,7 +159,7 @@ def play_game(s, readout, h_fc1, sess, explore_prob, restore = False):
     # print(s_t.shape)
     
     # For seeing how the network is trained
-    #explore_prob = 0 
+    explore_prob = 0 
     # start preparing pre-specified amount of transactions
     t = 0
     while t < REPLAY_MEMORY:
@@ -180,7 +180,7 @@ def play_game(s, readout, h_fc1, sess, explore_prob, restore = False):
         
         #print("Q_TAP %g" % readout_t[1], "/ Q_NONE %g" % readout_t[0])    
         # Apply action and get 1 next frame
-        #print("Initiate transaction: {} with action {}".format(t, action_index))
+        print("Initiate transaction: {} with action {}".format(t, action_index))
         x_t1[0], _, terminal = game.frame_step(a_t)
         ### DEBUG ###
         # x_t1[0], terminal = game.frame_step(do_nothing)
@@ -284,7 +284,7 @@ if __name__ == "__main__":
     
     # If resuming training, set start accordingly
     # start = 0 if there is not previous training data
-    start = 41
+    start = 42
     
     # recover the explore_prob to the current training stage corresponding value
     for i in range(start):

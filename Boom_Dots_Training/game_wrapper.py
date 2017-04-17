@@ -85,8 +85,9 @@ class Game:
         time.sleep(0.5)
         _,_,terminal = self.frame_step(do_nothing)
         while terminal:
-            _,_,terminal = self.frame_step(tap)
-            time.sleep(0.5)
+            output_processor.tap((self.__denormalize_screen_position(self.params.restart_tap_position)))
+            _,_,terminal = self.frame_step(do_nothing) # just to grab if it's terminal state
+            time.sleep(0.25)
         # if play:
         #   #print("TAP")
         #   time.sleep(0.7)
@@ -96,7 +97,7 @@ class Game:
         # time.sleep(0.3)
         # output_processor.tap(self.__denormalize_screen_position(self.params.restart_tap_position))
        
-        
+    # for ending transaction collection and play stage    
     def reach_terminal_state(self):
       do_nothing = np.zeros(2)
       do_nothing[0] = 1
