@@ -31,10 +31,10 @@ FINAL_EXPLORE_PROB = 0.2
 EXPLORE_PROB_DECAY = 100 # amount of total timesteps to redunce the probability of exploration
 TAB_PROB = 0.85 # assign 50% chance to explore tapping (after previously using 85% leading to lots of mistap learned)
 # a value of 0 corresponds to random decision
-REPLAY_MEMORY = 100  # number of previous transitions to remember
+REPLAY_MEMORY = 1000  # number of previous transitions to remember
 # Total size of training data
 TRAINING_ITER = 5 #Number of training iterations over the training data
-BATCH = 20  # size of minibatch. Should be divisible by REPLAY_MEMORY
+BATCH = 200  # size of minibatch. Should be divisible by REPLAY_MEMORY
 LEARNING_RATE = 1e-3
 RENDER_DISPLAY = False
 
@@ -286,7 +286,7 @@ if __name__ == "__main__":
     
     # If resuming training, set start accordingly
     # start = 0 if there is not previous training data
-    start = 52
+    start = 57
     
     # recover the explore_prob to the current training stage corresponding value
     for i in range(start):
