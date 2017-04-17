@@ -152,10 +152,10 @@ def play_game(s, readout, h_fc1, sess, explore_prob, restore = False):
 
     x_t1 = [1,2,3,4]
     # ignore the scores
-    x_t_1, _, terminal = game.frame_step(do_nothing)
-    x_t_2, _, terminal = game.frame_step(do_nothing)
-    x_t_3, _, terminal = game.frame_step(do_nothing)
-    x_t_4, _, terminal = game.frame_step(do_nothing)
+    x_t_1, terminal = game.frame_step(do_nothing)
+    x_t_2, terminal = game.frame_step(do_nothing)
+    x_t_3, terminal = game.frame_step(do_nothing)
+    x_t_4, terminal = game.frame_step(do_nothing)
     # print(x_t_1.shape)
     s_t = np.stack((x_t_1, x_t_2, x_t_3, x_t_4),axis=2) #each "pixel" contains 4 pixels stacked together
     # print(s_t.shape)
@@ -195,7 +195,7 @@ def play_game(s, readout, h_fc1, sess, explore_prob, restore = False):
             
         # store the transition in D
         D.append([s_t, a_t, s_t1, Q_max_last, terminal])
-        print("Got transaction: {}| incremented: {}| terminal state {}".format(t, increment, terminal))   
+        print("Got transaction: {}| Performed Action: {}| terminal state {}".format(t, np.argmax(a_t), terminal))   
         #print("Transaction #", t, "/ Epsilon_for_softmax:", epsilon, "/ ACTION:", action_index, "/ Q_TAP %g" % readout_t[1], "/ Q_NONE %g" % readout_t[0], "/ TERMINAL ", terminal)
         # print("Tap_unnorm {} / Tap_norm {} / Prob_Tap {} / decision {}".format(tap_unnorm, norm, Prob_Tap, decision))
         # log_file.write("TIMESTEP", t, "/ EPSILON", epsilon, "/ ACTION", action_index, "/ Q_MAX %e" % Q_max_last, "/ TERMINAL ", terminal, '\n')

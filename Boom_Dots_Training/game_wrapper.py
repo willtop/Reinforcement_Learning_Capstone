@@ -88,10 +88,10 @@ class Game:
         do_nothing = np.zeros(2)
         do_nothing[0] = 1
         time.sleep(0.5)
-        _,_,terminal = self.frame_step(do_nothing)
+        _,terminal = self.frame_step(do_nothing)
         while terminal:
             output_processor.tap((self.__denormalize_screen_position(self.params.restart_tap_position)))
-            _,_,terminal = self.frame_step(do_nothing) # just to grab if it's terminal state
+            _,terminal = self.frame_step(do_nothing) # just to grab if it's terminal state
             time.sleep(0.25)
         # if play:
         #   #print("TAP")
@@ -111,14 +111,14 @@ class Game:
       
       print("Try to Reach terminal State")
       time.sleep(1)
-      _,_,terminal = self.frame_step(do_nothing)
+      _,terminal = self.frame_step(do_nothing)
       
       while (not terminal):
-        _,_,terminal = self.frame_step(tap)
+        _,terminal = self.frame_step(tap)
         time.sleep(2.0) # make sure it's really picking up terminated
-        _,_,terminal = self.frame_step(do_nothing)
-        _,_,terminal = self.frame_step(do_nothing)
-        _,_,terminal = self.frame_step(do_nothing)
+        _,terminal = self.frame_step(do_nothing)
+        _,terminal = self.frame_step(do_nothing)
+        _,terminal = self.frame_step(do_nothing)
       # input()
       # self.restart(play=False)
 

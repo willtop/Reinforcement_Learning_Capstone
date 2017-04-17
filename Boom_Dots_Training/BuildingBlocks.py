@@ -8,7 +8,7 @@ import tensorflow as tf
 terminate_reward = -1
 #first_tab_reward = 0.5
 correct_tab_reward = 0.5 # motivate such taps that keep agent alive
-negative_opposite_action_reward = 0 # not using this entry (used to be -1)
+#negative_opposite_action_reward = 0 # not using this entry (used to be -1)
 
 
 class DataDistribution:
@@ -49,8 +49,8 @@ class DataDistribution:
     self.action = data[:,1]
     self.reward = []
     toDelete = []
-    toAppend = []
-    actionAppend = []
+    #toAppend = []
+    #actionAppend = []
     do_nothing = np.zeros(2)
     do_nothing[0] = 1
     tap = np.zeros(2)
@@ -72,15 +72,6 @@ class DataDistribution:
       # if this transaction reaches a terminal state  
       if d[4]:
         self.reward.append(terminate_reward)
-        toAppend.append(d[0])
-        # Q: Couldn't just append the action d[1]?
-        if d[1][0] == 1:
-          actionAppend.append(tap)
-        elif d[1][1] == 1:
-          actionAppend.append(do_nothing)
-        else:
-          print("ERROR: action was not tap nor do_nothing")
-          exit()
         continue
              
       if np.argmax(d[1])==1:
@@ -100,16 +91,6 @@ class DataDistribution:
     self.action = np.stack(self.action)
     self.reward = np.stack(self.reward)
     
-    if negative_opposite_action_reward != 0:
-      toAppend = np.array(toAppend)
-      actionAppend = np.array(actionAppend)
-      rewardAppend = np.ones((len(toAppend)))*negative_opposite_action_reward
-      # print(rewardAppend)
-      # print(self.reward)
-     
-      self.state = np.vstack((self.state, toAppend))
-      self.action = np.vstack((self.action, actionAppend))
-      self.reward = np.concatenate((self.reward, rewardAppend))
         
     assert self.state.shape[0] == self.reward.shape[0], (
           'state.shape: %s reward.shape: %s' % (self.state.shape, self.reward.shape))
