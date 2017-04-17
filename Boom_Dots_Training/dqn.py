@@ -28,13 +28,13 @@ GAMMA = 0.90  # decay rate of past observations
 # OBSERVE = 500.  # timesteps to observe before training
 INITIAL_EXPLORE_PROB = 1.0
 FINAL_EXPLORE_PROB = 0.2
-EXPLORE_PROB_DECAY = 50 # amount of total timesteps to redunce the probability of exploration
-TAB_PROB = 0.7 # assign 50% chance to explore tapping (after previously using 70% leading to lots of mistap learned)
+EXPLORE_PROB_DECAY = 100 # amount of total timesteps to redunce the probability of exploration
+TAB_PROB = 0.85 # assign 50% chance to explore tapping (after previously using 85% leading to lots of mistap learned)
 # a value of 0 corresponds to random decision
-REPLAY_MEMORY = 1000  # number of previous transitions to remember
+REPLAY_MEMORY = 100  # number of previous transitions to remember
 # Total size of training data
 TRAINING_ITER = 5 #Number of training iterations over the training data
-BATCH = 200  # size of minibatch. Should be divisible by REPLAY_MEMORY
+BATCH = 20  # size of minibatch. Should be divisible by REPLAY_MEMORY
 LEARNING_RATE = 1e-3
 RENDER_DISPLAY = False
 
@@ -145,8 +145,10 @@ def play_game(s, readout, h_fc1, sess, explore_prob, restore = False):
     tap = np.zeros(ACTIONS)
     tap[1] = 1
     
-    game.frame_step(tap) # this would start the game
+    print("tap to start the game...")
+    game.start_tap() # this would start the game
     time.sleep(0.1)
+    print("game starting!")
 
     x_t1 = [1,2,3,4]
     # ignore the scores
@@ -178,9 +180,9 @@ def play_game(s, readout, h_fc1, sess, explore_prob, restore = False):
             action_index = np.argmax(readout_t)
             a_t[action_index] = 1
         
-        #print("Q_TAP %g" % readout_t[1], "/ Q_NONE %g" % readout_t[0])    
+        print("Q_TAP %g" % readout_t[1], "/ Q_NONE %g" % readout_t[0])    
         # Apply action and get 1 next frame
-        print("Initiate transaction: {} with action {}".format(t, action_index))
+        # print("Initiate transaction: {} with action {}".format(t, action_index))
         x_t1[0], _, terminal = game.frame_step(a_t)
         ### DEBUG ###
         # x_t1[0], terminal = game.frame_step(do_nothing)
@@ -284,7 +286,7 @@ if __name__ == "__main__":
     
     # If resuming training, set start accordingly
     # start = 0 if there is not previous training data
-    start = 42
+    start = 52
     
     # recover the explore_prob to the current training stage corresponding value
     for i in range(start):

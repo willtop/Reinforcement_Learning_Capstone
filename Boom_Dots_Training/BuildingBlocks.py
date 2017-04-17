@@ -7,7 +7,8 @@ waiting_reward = -0.2 # It was -0.5 however it would encourage agent to blindly 
 lasting_reward = 0.2
 terminate_reward = -1
 first_tab_reward = 0.5
-negative_opposite_action_reward = -1
+correct_tab_reward = 0.5 # motivate such taps that keep agent alive
+negative_opposite_action_reward = 0 # not using this entry (used to be -1)
 
 
 class DataDistribution:
@@ -102,6 +103,9 @@ class DataDistribution:
           reward = waiting_reward + self.discount*data[i+1][4]
       else: # has performed first tab, good job for staying active
           reward = lasting_reward + self.discount*data[i+1][4]
+          # special reward for making one right tap
+          if(np.argmax(d[1])==1 and not terminal):
+              reward += correct_tab_reward
       self.reward.append(reward)
       
     self.state = np.delete(self.state, toDelete)      
