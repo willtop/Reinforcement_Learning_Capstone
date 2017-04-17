@@ -104,7 +104,7 @@ class DataDistribution:
       else: # has performed first tab, good job for staying active
           reward = lasting_reward + self.discount*data[i+1][4]
           # special reward for making one right tap
-          if(np.argmax(d[1])==1 and not terminal):
+          if(np.argmax(d[1])==1):
               reward += correct_tab_reward
       self.reward.append(reward)
       

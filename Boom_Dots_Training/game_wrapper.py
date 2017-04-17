@@ -75,7 +75,11 @@ class Game:
             cv2.waitKey(1)
         #print("Played one move: {}, reaching terminal? {}".format(chosen_action, terminal))
         return screenshot, increment, terminal
-
+        
+    # only called to start the game
+    def start_tap(self):
+        output_processor.tap((self.__denormalize_screen_position(self.params.restart_tap_position)))
+        
     def restart(self, play=True):
         #print('>>>>>>> RESTART')
         tap = np.zeros(2)
