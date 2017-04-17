@@ -183,18 +183,18 @@ def play_game(s, readout, h_fc1, sess, explore_prob, restore = False):
         # print("Q_TAP %g" % readout_t[1], "/ Q_NONE %g" % readout_t[0])    
         # Apply action and get 1 next frame
         # print("Initiate transaction: {} with action {}".format(t, action_index))
-        x_t1[0], _, terminal = game.frame_step(a_t)
+        x_t1[0], _ = game.frame_step(a_t)
         ### DEBUG ###
         # x_t1[0], terminal = game.frame_step(do_nothing)
         ######
         for i in range(1, NUM_FRAMES):
             time.sleep(0.15)
             # Get next three with doing nothing
-            x_t1[i], increment, terminal = game.frame_step(do_nothing)
+            x_t1[i], terminal = game.frame_step(do_nothing)
         s_t1 = np.stack((x_t1[0], x_t1[1], x_t1[2], x_t1[3]), axis=2)
             
         # store the transition in D
-        D.append([s_t, a_t, s_t1, increment, Q_max_last, terminal])
+        D.append([s_t, a_t, s_t1, Q_max_last, terminal])
         print("Got transaction: {}| incremented: {}| terminal state {}".format(t, increment, terminal))   
         #print("Transaction #", t, "/ Epsilon_for_softmax:", epsilon, "/ ACTION:", action_index, "/ Q_TAP %g" % readout_t[1], "/ Q_NONE %g" % readout_t[0], "/ TERMINAL ", terminal)
         # print("Tap_unnorm {} / Tap_norm {} / Prob_Tap {} / decision {}".format(tap_unnorm, norm, Prob_Tap, decision))
@@ -221,10 +221,10 @@ def play_game(s, readout, h_fc1, sess, explore_prob, restore = False):
             print("After transaction {}, game terminates. Restarting with four empty actions...".format(t))
             game.restart()
             x_t1 = [1,2,3,4]
-            x_t_1, _, terminal = game.frame_step(do_nothing)
-            x_t_2, _, terminal = game.frame_step(do_nothing)
-            x_t_3, _, terminal = game.frame_step(do_nothing)
-            x_t_4, _, terminal = game.frame_step(do_nothing)
+            x_t_1, terminal = game.frame_step(do_nothing)
+            x_t_2, terminal = game.frame_step(do_nothing)
+            x_t_3, terminal = game.frame_step(do_nothing)
+            x_t_4, terminal = game.frame_step(do_nothing)
             # print(x_t_1.shape)
             s_t = np.stack((x_t_1, x_t_2, x_t_3, x_t_4),axis=2)
             # input()
@@ -306,7 +306,7 @@ if __name__ == "__main__":
 
     print("Main program: start playing stage...")
     # save 100 sets of 2000 transactions 
-    for i in range(start,100):
+    for i in range(start,110):
       start_time = time.time()
       # play game gets the 2k training points
       data = play_game(s, readout, h_fc1, sess, explore_prob, restore=True)

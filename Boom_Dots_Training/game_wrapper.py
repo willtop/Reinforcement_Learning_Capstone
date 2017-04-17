@@ -50,11 +50,12 @@ class Game:
         screenshot = np.transpose(screenshot)
 
         #print("Action Performed: {}".format(chosen_action))
-        increment = self.__check_scoring(screenshot)
+        #increment = self.__check_scoring(screenshot)
 
         terminal = self.__check_terminal_state(screenshot)
-        if self.auto_restart and terminal:
-            self.restart()
+        # Comment out the if statement to save time
+        # if self.auto_restart and terminal:
+        #    self.restart()
         #if not self.auto_restart and terminal:
             #print("Game ends. Not restarting.")
         
@@ -74,7 +75,7 @@ class Game:
             # cv2.imshow('score', cv2.cvtColor(score_im, cv2.COLOR_GRAY2BGR))
             cv2.waitKey(1)
         #print("Played one move: {}, reaching terminal? {}".format(chosen_action, terminal))
-        return screenshot, increment, terminal
+        return screenshot, terminal
         
     # only called to start the game
     def start_tap(self):
@@ -121,6 +122,7 @@ class Game:
       # input()
       # self.restart(play=False)
 
+    # For this new trial version, this function is not used
     def __check_scoring(self, screenshot):
         check = True
         #print("ever got invoked?")

@@ -3,10 +3,10 @@ import tensorflow as tf
 #Don't need processing score: from input_processor import ScoreCalc
 
 #SCORES
-waiting_reward = -0.2 # It was -0.5 however it would encourage agent to blindly make first tap
-lasting_reward = 0.2
+#waiting_reward = -0.2 # It was -0.5 however it would encourage agent to blindly make first tap
+#lasting_reward = 0.2
 terminate_reward = -1
-first_tab_reward = 0.5
+#first_tab_reward = 0.5
 correct_tab_reward = 0.5 # motivate such taps that keep agent alive
 negative_opposite_action_reward = 0 # not using this entry (used to be -1)
 
@@ -62,7 +62,6 @@ class DataDistribution:
     # print(data.shape)
     # print(self.state.shape)
     
-    first_tab_performed = False
     for i,d in enumerate(data):
       # No Q value for last data point
       # print("Loop {}".format(i))
@@ -71,7 +70,7 @@ class DataDistribution:
         break
       
       # if this transaction reaches a terminal state  
-      if d[5]:
+      if d[4]:
         self.reward.append(terminate_reward)
         toAppend.append(d[0])
         # Q: Couldn't just append the action d[1]?
@@ -82,30 +81,14 @@ class DataDistribution:
         else:
           print("ERROR: action was not tap nor do_nothing")
           exit()
-        # have to manually reset the global variable for ongoing score to zero
-        #ScoreCalculator.resertScore()
-        #score = 0
-        first_tab_performed = False
         continue
-        
-      increment = d[3]
-      if increment:
-          if not first_tab_performed: 
-              # special case for just making that first tab
-              reward = first_tab_reward + self.discount*data[i+1][4]
-              first_tab_performed = True
-              self.reward.append(reward)
-              continue
-          first_tab_performed = True
-
-      if not first_tab_performed:
-          # penalty for waiting to encourage performing first tab
-          reward = waiting_reward + self.discount*data[i+1][4]
-      else: # has performed first tab, good job for staying active
-          reward = lasting_reward + self.discount*data[i+1][4]
-          # special reward for making one right tap
-          if(np.argmax(d[1])==1):
-              reward += correct_tab_reward
+             
+      if np.argmax(d[1])==1:
+          # special reward for making one right tap 
+          reward = correct_tab_reward + self.discount*data[i+1][4]
+      else:
+          # agent did nothing, don't have any corresponding reward (use time decay to implicitly reward it for staying active)
+          reward = self.discount*data[i+1][4]
       self.reward.append(reward)
       
     self.state = np.delete(self.state, toDelete)      
