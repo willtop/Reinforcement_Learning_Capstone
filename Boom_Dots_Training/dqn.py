@@ -161,7 +161,7 @@ def play_game(s, readout, h_fc1, sess, explore_prob, restore = False):
     # print(s_t.shape)
     
     # For seeing how the network is trained
-    explore_prob = 0.6 # hard assignment here for controlling testing behavior on epoch base 
+    explore_prob = 0#.6 # hard assignment here for controlling testing behavior on epoch base 
     # start preparing pre-specified amount of transactions
     t = 0
     while t < REPLAY_MEMORY:

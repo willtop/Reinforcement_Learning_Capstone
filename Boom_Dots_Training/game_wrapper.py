@@ -39,7 +39,8 @@ class Game:
         #    print("just tapped!")
 
         # shouldn't wait here for a bit?
-        time.sleep(0.25)
+        # Don't put delay: to ensure high enough sampling rate for optimal state
+        #time.sleep(0.25)
 
         raw_im = ImageGrab.grab(bbox=self.bounding_box)
         # score_im = np.asarray(raw_im.crop(self.params.score_box))

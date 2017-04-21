@@ -62,18 +62,26 @@ class DataDistribution:
     # print(data.shape)
     # print(self.state.shape)
     
-    for i,d in enumerate(data):
+    for i in range(np.shape(data)[0]-2): # due to 2 timesteps delay, the last 2 timesteps will be with agnostic terminal status, so not using them
       # No Q value for last data point
       # print("Loop {}".format(i))
       if i == len(data)-1:
         toDelete.append(i)
         break
       
+      # check if this is a invalid state (state after actual terminal)
+      next_state = data[i+1]; second_next_state = data[i+1]
+      if(current_state[4] or next_state[4]):
+          # this is a transaction after reaching terminal state, due to 2 timesteps lag
+          toDelete.append(i) # ignore this state
+          continue
+          
       # if this transaction reaches a terminal state  
-      if d[4]:
+      if (second_next_state[4]):
         self.reward.append(terminate_reward)
         continue
              
+      # upon reaching here, this state doesn't correspond to a terminal state
       if np.argmax(d[1])==1:
           # special reward for making one right tap 
           reward = correct_tab_reward + self.discount*data[i+1][4]
