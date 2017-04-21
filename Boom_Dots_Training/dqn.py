@@ -24,12 +24,12 @@ GAME_PARAMS = boom_dots_params
 ACTIONS = 2  # number of valid actions
 INPUT_DIMS = (60, 100) # Dimension for input image to CNN
 NUM_FRAMES = 4 # Number of frames in each training data point
-GAMMA = 0.90  # decay rate of past observations
+GAMMA = 0.8  # Reduce to lower values to encourage larger Q values for optimal waiting; decay rate of past observations
 # OBSERVE = 500.  # timesteps to observe before training
 INITIAL_EXPLORE_PROB = 1.0
 FINAL_EXPLORE_PROB = 0.2
 EXPLORE_PROB_DECAY = 100 # amount of total timesteps to redunce the probability of exploration
-TAB_PROB = 0.85 # assign 50% chance to explore tapping (after previously using 85% leading to lots of mistap learned)
+TAB_PROB = 0.55 # assign 50% chance to explore tapping (after previously using 85% leading to lots of mistap learned)
 # a value of 0 corresponds to random decision
 REPLAY_MEMORY = 1000  # number of previous transitions to remember
 # Total size of training data
@@ -161,7 +161,7 @@ def play_game(s, readout, h_fc1, sess, explore_prob, restore = False):
     # print(s_t.shape)
     
     # For seeing how the network is trained
-    explore_prob = 0.5 # hard assignment here for controlling testing behavior on epoch base 
+    explore_prob = 0.6 # hard assignment here for controlling testing behavior on epoch base 
     # start preparing pre-specified amount of transactions
     t = 0
     while t < REPLAY_MEMORY:
@@ -180,7 +180,7 @@ def play_game(s, readout, h_fc1, sess, explore_prob, restore = False):
             action_index = np.argmax(readout_t)
             a_t[action_index] = 1
         
-        # print("Q_TAP %g" % readout_t[1], "/ Q_NONE %g" % readout_t[0])    
+        #print("Q_TAP %g" % readout_t[1], "/ Q_NONE %g" % readout_t[0])    
         # Apply action and get 1 next frame
         # print("Initiate transaction: {} with action {}".format(t, action_index))
         x_t1[0], _ = game.frame_step(a_t)
@@ -286,7 +286,7 @@ if __name__ == "__main__":
     
     # If resuming training, set start accordingly
     # start = 0 if there is not previous training data
-    start = 57
+    start = 92
     
     # recover the explore_prob to the current training stage corresponding value
     for i in range(start):

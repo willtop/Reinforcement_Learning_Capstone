@@ -7,7 +7,7 @@ import tensorflow as tf
 #lasting_reward = 0.2
 terminate_reward = -1
 #first_tab_reward = 0.5
-correct_tab_reward = 0.5 # motivate such taps that keep agent alive
+correct_tab_reward = 0.6 # motivate such taps that keep agent alive
 #negative_opposite_action_reward = 0 # not using this entry (used to be -1)
 
 
