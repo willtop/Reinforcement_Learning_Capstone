@@ -31,10 +31,10 @@ FINAL_EXPLORE_PROB = 0.2
 EXPLORE_PROB_DECAY = 100 # amount of total timesteps to redunce the probability of exploration
 TAB_PROB = 0.55 # assign 50% chance to explore tapping (after previously using 85% leading to lots of mistap learned)
 # a value of 0 corresponds to random decision
-REPLAY_MEMORY = 1000  # number of previous transitions to remember
+REPLAY_MEMORY = 10#00  # number of previous transitions to remember
 # Total size of training data
 TRAINING_ITER = 5 #Number of training iterations over the training data
-BATCH = 200  # size of minibatch. Should be divisible by REPLAY_MEMORY
+BATCH = 2#00  # size of minibatch. Should be divisible by REPLAY_MEMORY
 LEARNING_RATE = 1e-3
 RENDER_DISPLAY = False
 
@@ -262,7 +262,7 @@ def train_network(s, a, y, train_step, sess, data, iter, restore=True):
         # perform gradient step
         train_step.run(feed_dict={y: reward, a: action, s: state})
             
-    saver.save(sess, 'saved_networks/' + GAME + '-dqn', global_step=iter)
+    #saver.save(sess, 'saved_networks/' + GAME + '-dqn', global_step=iter)
   
 def restore_network():
     saver = tf.train.Saver()

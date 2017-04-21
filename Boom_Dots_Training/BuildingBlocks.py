@@ -62,32 +62,32 @@ class DataDistribution:
     # print(data.shape)
     # print(self.state.shape)
     
-    for i in range(np.shape(data)[0]-2): # due to 2 timesteps delay, the last 2 timesteps will be with agnostic terminal status, so not using them
-      # No Q value for last data point
-      # print("Loop {}".format(i))
-      if i == len(data)-1:
-        toDelete.append(i)
-        break
+    for i in range(np.shape(data)[0]): 
+      # due to 2 timesteps delay, the last 2 timesteps will be with agnostic terminal status, so not using them
+      if(i == len(data)-1 or i == len(data)-2):
+          toDelete.append(i)
+          continue
       
+      current_transac = data[i]
       # check if this is a invalid state (state after actual terminal)
-      next_state = data[i+1]; second_next_state = data[i+1]
-      if(current_state[4] or next_state[4]):
+      next_transac = data[i+1]; second_next_transac = data[i+2]
+      if(current_transac[4] or next_transac[4]):
           # this is a transaction after reaching terminal state, due to 2 timesteps lag
           toDelete.append(i) # ignore this state
           continue
           
       # if this transaction reaches a terminal state  
-      if (second_next_state[4]):
-        self.reward.append(terminate_reward)
-        continue
+      if (second_next_transac[4]):
+          self.reward.append(terminate_reward)
+          continue
              
       # upon reaching here, this state doesn't correspond to a terminal state
-      if np.argmax(d[1])==1:
+      if np.argmax(current_transac[1])==1:
           # special reward for making one right tap 
-          reward = correct_tab_reward + self.discount*data[i+1][4]
+          reward = correct_tab_reward + self.discount*next_transac[4]
       else:
           # agent did nothing, don't have any corresponding reward (use time decay to implicitly reward it for staying active)
-          reward = self.discount*data[i+1][4]
+          reward = self.discount*next_transac[4]
       self.reward.append(reward)
       
     self.state = np.delete(self.state, toDelete)      
