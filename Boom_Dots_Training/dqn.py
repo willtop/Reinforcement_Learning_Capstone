@@ -31,10 +31,10 @@ FINAL_EXPLORE_PROB = 0.2
 EXPLORE_PROB_DECAY = 100 # amount of total timesteps to redunce the probability of exploration
 TAB_PROB = 0.55 # assign 50% chance to explore tapping (after previously using 85% leading to lots of mistap learned)
 # a value of 0 corresponds to random decision
-REPLAY_MEMORY = 1000  # number of previous transitions to remember
+REPLAY_MEMORY = 2000  # number of previous transitions to remember
 # Total size of training data
 TRAINING_ITER = 5 #Number of training iterations over the training data
-BATCH = 200  # size of minibatch. Should be divisible by REPLAY_MEMORY
+BATCH = 500  # size of minibatch. Should be divisible by REPLAY_MEMORY
 LEARNING_RATE = 1e-3
 RENDER_DISPLAY = False
 
@@ -161,7 +161,7 @@ def play_game(s, readout, h_fc1, sess, explore_prob, restore = False):
     # print(s_t.shape)
     
     # For seeing how the network is trained
-    explore_prob = 0.6 # hard assignment here for controlling testing behavior on epoch base 
+    explore_prob = 0.3 # hard assignment here for controlling testing behavior on epoch base 
     # start preparing pre-specified amount of transactions
     t = 0
     while t < REPLAY_MEMORY:
@@ -286,7 +286,7 @@ if __name__ == "__main__":
     
     # If resuming training, set start accordingly
     # start = 0 if there is not previous training data
-    start = 92
+    start = 123
     
     # recover the explore_prob to the current training stage corresponding value
     for i in range(start):
@@ -306,7 +306,7 @@ if __name__ == "__main__":
 
     print("Main program: start playing stage...")
     # save 100 sets of 2000 transactions 
-    for i in range(start,110):
+    for i in range(start,200):
       start_time = time.time()
       # play game gets the 2k training points
       data = play_game(s, readout, h_fc1, sess, explore_prob, restore=True)
