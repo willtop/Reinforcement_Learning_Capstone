@@ -17,7 +17,7 @@ class GameParams:
 boom_dots_params = GameParams(
     [0.75, 0.65], # tap_position; make it different from restart tap position to avoid mistakenly restart
     [0.7, 0.75], # restart_tap_position; confirmed
-    [[0.3, 0.75], [0.7, 0.75]], # terminal_pixel_position; confirmed
+    [[0.3, 0.7], [0.7, 0.7]], # terminal_pixel_position; confirmed
     [136, 136], # terminal_pixel_color; confirmed
     #[[0.5, 0.2]], # scoring_pixel_position; Shouldn't be used here
     #[87], # scoring_pixel_color; Shouldn't be used here

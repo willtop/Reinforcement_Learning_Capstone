@@ -9,12 +9,12 @@ class OutputArduino:
         #Start the serial port to communicate with arduino
         self.data = serial.Serial('com3',9600, timeout=1)
         time.sleep(2)
-        self.data.write(struct.pack('>B',55))
+        self.data.write(struct.pack('>B',45))
 
     def tap(self, point):
-        self.data.write(struct.pack('>B',35))
+        self.data.write(struct.pack('>B',40))
         time.sleep(0.1)
-        self.data.write(struct.pack('>B',55))
+        self.data.write(struct.pack('>B',45))
         
         
 if __name__ == '__main__':
