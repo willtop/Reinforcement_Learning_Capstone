@@ -11,17 +11,17 @@ ACTION_PROPAGATION_DELAY = 0.0
 
 NAME = selected_params.name
 ACTIONS = 2
-ACTION_PROBABILITIES = [0.8, 0.2]
-GAMMA = 0.95
-OBSERVE = 10000
+ACTION_PROBABILITIES = [0.9, 0.1]
+GAMMA = 0.75
+OBSERVE = 50000
 
-EXPLORE = 100000
-FINAL_EPSILON = 0.0
+EXPLORE = 1000000
+FINAL_EPSILON = 0.05
 INITIAL_EPSILON = 1.0
-REPLAY_MEMORY = 10000
-REPLAY_MEMORY_DISCARD_AMOUNT = 500
+REPLAY_MEMORY = 50000
+REPLAY_MEMORY_DISCARD_AMOUNT = 1000
 BATCH = 100
-NUM_EPOCHS = 5
+NUM_EPOCHS = 10
 
 RENDER_DISPLAY = False
 
@@ -34,7 +34,7 @@ class GameState:
 
     box_width = bounding_box[2] - bounding_box[0]
     box_height = bounding_box[3] - bounding_box[1]
-    
+
     TERMINAL_PIXEL_TOLERANCE = 3
 
     def __init__(self):
@@ -62,12 +62,20 @@ class GameState:
         im = raw_im.resize(self.screenshot_dims, Image.ANTIALIAS)
         screenshot = np.asarray(im)
 
-        # Check if the state is terminal, and assign the reward
-        reward = 1
+        reward = 0
         terminal = self.__check_terminal_state(screenshot, selected_params.is_terminal_state_check_negative)
         if terminal:
             reward = -1
             self.__restart()
+        else:
+            chosen_action = np.argmax(input_vec)
+            actions = {
+                0: lambda: True,
+                1: lambda: output_processor.tap((self.__denormalize_screen_position(self.params.tap_position)))
+            }
+            actions[chosen_action]()
+
+        screenshot = np.transpose(screenshot, (1, 0, 2))
 
         if RENDER_DISPLAY:
             cv2.putText(screenshot, str(input_vec), (10, 10), cv2.FONT_HERSHEY_SIMPLEX, 0.2, (255, 0, 0), 1, cv2.LINE_AA)

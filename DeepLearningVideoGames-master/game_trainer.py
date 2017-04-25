@@ -23,11 +23,13 @@ REPLAY_MEMORY_DISCARD_AMOUNT = game.REPLAY_MEMORY_DISCARD_AMOUNT  # number of pr
 BATCH = game.BATCH  # size of minibatch
 NUM_EPOCHS = game.NUM_EPOCHS  # number of epochs of the replay memory to train on before discarding
 
-LEARNING_RATE = 1e-5
-PLAY_TO_WIN = False
+ACTION_COOLDOWN_FRAMES = 2
+
+LEARNING_RATE = 1e-6
 TARGET_FRAME_TIME = 0.0666666
 CHECKPOINTS_DIR = 'checkpoints_' + GAME + '/'
 
+PLAY_TO_WIN = False
 RENDER_DISPLAY = False
 
 
@@ -54,8 +56,8 @@ def train(s, readout, h_fc1, sess):
     do_nothing[0] = 1
     x_t, r_0, terminal = game_state.frame_step(do_nothing)
     x_t = cv2.cvtColor(cv2.resize(x_t, (80, 80)), cv2.COLOR_BGR2GRAY)
-    ret, x_t = cv2.threshold(x_t, 1, 255, cv2.THRESH_BINARY)
     s_t = np.stack((x_t, x_t, x_t, x_t), axis=2)
+    action_cooldown_frames = 0
 
     # saving and loading networks
     saver = tf.train.Saver()
@@ -82,27 +84,40 @@ def train(s, readout, h_fc1, sess):
             else:
                 epsilon_delta_per_step = (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
                 epsilon = INITIAL_EPSILON - epsilon_delta_per_step * (t - OBSERVE)
-                epsilon = 0 if epsilon < 0 else epsilon
+                epsilon = FINAL_EPSILON if epsilon < FINAL_EPSILON else epsilon
 
         # choose an action epsilon greedily
         readout_time = time.time()
         readout_t = readout.eval(feed_dict={s: [s_t]})[0]
-        a_t = np.zeros([ACTIONS])
-        if random.random() <= epsilon or t <= OBSERVE:
-            is_experimental_action = True
-            action_index = np.random.choice(ACTIONS, 1, p=ACTION_PROBABILITIES)[0]
+        if action_cooldown_frames <= 0:
+            a_t = np.zeros([ACTIONS])
+            if random.random() <= epsilon or t <= OBSERVE:
+                is_experimental_action = True
+                action_index = np.random.choice(ACTIONS, 1, p=ACTION_PROBABILITIES)[0]
+            else:
+                is_experimental_action = False
+                action_index = np.argmax(readout_t)
+            a_t[action_index] = 1
+            if action_index != 0:
+                action_cooldown_frames = ACTION_COOLDOWN_FRAMES
         else:
             is_experimental_action = False
-            action_index = np.argmax(readout_t)
-        a_t[action_index] = 1
+            action_index = 0
+            a_t = do_nothing
+            action_cooldown_frames -= 1
         readout_time = time.time() - readout_time
 
         # run the selected action and observe next state and reward
         frame_time = time.time()
+        is_prev_terminal = terminal
         x_t1_col, r_t, terminal = game_state.frame_step(a_t)
         x_t1 = cv2.cvtColor(cv2.resize(x_t1_col, (80, 80)), cv2.COLOR_BGR2GRAY)
-        x_t1 = np.reshape(x_t1, (80, 80, 1))
-        s_t1 = np.append(x_t1, s_t[:, :, 0:3], axis=2)
+        ret, x_t1 = cv2.threshold(x_t1, 150, 255, cv2.THRESH_BINARY)
+        if is_prev_terminal:
+            s_t1 = np.stack((x_t1, x_t1, x_t1, x_t1), axis=2)
+        else:
+            x_t1 = np.reshape(x_t1, (80, 80, 1))
+            s_t1 = np.append(x_t1, s_t[:, :, 0:3], axis=2)
         frame_time = time.time() - frame_time
 
         train_time = time.time()
