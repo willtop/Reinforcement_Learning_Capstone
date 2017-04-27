@@ -7,9 +7,10 @@ import time
 class Game:
     RENDER_DISPLAY = False
     emulator_resolution = (485, 770)    
-    bounding_box = (0, 105, 480, 959)  # Daniel Laptop
-    # bounding_box = (0, 0, 485, 770) # for getting game field, the emulator screen
+    # bounding_box = (0, 70, 292, 560)  # Daniel Laptop
+    # bounding_box = (20, 100, 380, 700)  # Jason's laptop - Emulator
     corner = (0,0) # upper left corner placement of the game field
+    bounding_box = (0, 0, 485, 770) # for getting game field, the emulator screen 
     # print("Found box: {}".format(bounding_box))
     box_width = bounding_box[2] - bounding_box[0]
     box_height = bounding_box[3] - bounding_box[1]
@@ -61,7 +62,7 @@ class Game:
         
         # Check location of terminal position
         # screenshot.flags['WRITEABLE'] = True
-        # scoring_pos = [self.denormalize_screenshot_position(screenshot,v) for v in self.params.terminal_pixel_position]
+        # scoring_pos = [self.denormalize_screenshot_position(screenshot,v) for v in self.params.scoring_pixel_position]
         # for i,pos in enumerate(scoring_pos):
         #     print("pos {}: {}".format(i,screenshot[pos[0],pos[1]]))
         #     screenshot[pos[0],pos[1]]=0 # set the position to black so easily visible
